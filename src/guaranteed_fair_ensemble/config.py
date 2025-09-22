@@ -61,12 +61,13 @@ def parse_args() -> argparse.Namespace:
         "--dataset",
         type=str,
         default="fitzpatrick17k",
+        choices=[ds.name for ds in DATASET_HPARAMS],
         help="Registered dataset to use (see datasets/ package)",
     )
     parser.add_argument(
         "--data_dir",
         type=Path,
-        default=Path(os.getenv("PAPILA_PATH", ".")),
+        default=Path(os.getenv("DATA_DIR", ".")),
         help="Root folder that contains the raw datasets",
     )
     # Model configuration

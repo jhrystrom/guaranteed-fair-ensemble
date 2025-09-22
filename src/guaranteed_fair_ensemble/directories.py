@@ -13,7 +13,7 @@ def get_main_dir(name: str = "data", create_dir: bool = True) -> Path:
     return path
 
 
-DATA_DIR = Path(os.getenv("PAPILA_PATH", "data"))
+DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
 PLOT_DIR = get_main_dir(name="plots")
 OUTPUT_DIR = get_main_dir(name="output")
 CHECKPOINT_DIR = DATA_DIR / "checkpoints"
