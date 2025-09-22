@@ -1,0 +1,42 @@
+[project]
+name = "guaranteed-fair-ensemble"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fairlearn>=0.12.0",
+    "fairret>=0.1.3",
+    "h5py>=3.13.0",
+    "imbalanced-learn>=0.14.0",
+    "lightning>=2.5.2",
+    "line-profiler>=4.2.0",
+    "loguru>=0.7.3",
+    "matplotlib>=3.10.1",
+    "oxonfair>=0.2.1.9",
+    "pandas>=2.2.3",
+    "polars>=1.32.3",
+    "pyarrow>=20.0.0",
+    "python-dotenv>=1.1.0",
+    "scikit-learn>=1.6.1",
+    "seaborn>=0.13.2",
+    "shap>=0.47.2",
+    "tabulate>=0.9.0",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+    "tqdm>=4.67.1",
+    "wandb>=0.19.10",
+]
+
+
+[build-system]
+requires = ["uv_build>=0.8.3,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+notebook = [
+    "ipykernel>=6.30.1",
+]
+test = [
+    "pytest>=8.3.5",
+]
