@@ -137,8 +137,8 @@ def get_lit_model_for_method(method: str, model: nn.Module, **kwargs):
 
         return OneHeadFairretLit(model, use_fairret=False, **kwargs)
     if method == "ensemble_multi_head":
-        from guaranteed_fair_ensemble.models.guaranteed_fair_ensemble_lit import (
-            guaranteed_fair_ensemble,
+        from guaranteed_fair_ensemble.models.fairensemble_lit import (
+            FairEnsemble,
         )
 
         training_mask = kwargs.get("training_mask")
@@ -147,7 +147,7 @@ def get_lit_model_for_method(method: str, model: nn.Module, **kwargs):
         print(f"{kwargs=}")
 
         # Pass the total_loss function to ensure consistency
-        return guaranteed_fair_ensemble(model=model, **kwargs)
+        return FairEnsemble(model=model, **kwargs)
 
     # Placeholder for other methods - to be implemented
     print(f"Note: Specialized Lightning module for '{method}' not yet implemented.")

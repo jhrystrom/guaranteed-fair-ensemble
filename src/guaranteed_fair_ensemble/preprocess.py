@@ -13,8 +13,8 @@ from guaranteed_fair_ensemble.config import get_dataset_info
 from guaranteed_fair_ensemble.data.registry import DatasetSpec, get_dataset
 from guaranteed_fair_ensemble.data_models import ModelInfo, TrainingInfo
 from guaranteed_fair_ensemble.directories import DATA_DIR
-from guaranteed_fair_ensemble.models.guaranteed_fair_ensemble_lit import (
-    guaranteed_fair_ensemble,
+from guaranteed_fair_ensemble.models.fairensemble_lit import (
+    FairEnsemble,
     load_guaranteed_fair_ensemble_from_checkpoint,
 )
 from guaranteed_fair_ensemble.torch_utils import get_device
@@ -27,7 +27,7 @@ def get_models_multihead(
     training_info: TrainingInfo,
     spec: DatasetSpec,
     iteration: int,
-) -> guaranteed_fair_ensemble:
+) -> FairEnsemble:
     """
     Load the multi-head ensemble model.
     """
@@ -62,7 +62,7 @@ def get_models_multihead(
 
 def batch_predict(
     transformed_images: torch.Tensor,
-    model: guaranteed_fair_ensemble,
+    model: FairEnsemble,
     batch_size: int = 512,
 ):
     all_features = []

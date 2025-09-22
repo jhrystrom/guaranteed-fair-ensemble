@@ -166,7 +166,7 @@ def initialize_model_checkpoint(
     if model_info.method == "ensemble":
         import torch
 
-        from guaranteed_fair_ensemble.models.guaranteed_fair_ensemble_lit import (
+        from guaranteed_fair_ensemble.models.fairensemble_lit import (
             load_guaranteed_fair_ensemble_from_checkpoint,
         )
 
