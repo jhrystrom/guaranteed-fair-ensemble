@@ -705,11 +705,6 @@ if __name__ == "__main__":
         help="Number of thresholds to evaluate",
     )
     parser.add_argument(
-        "--filter-best",
-        action="store_true",
-        help="Only plot the best ensemble method",
-    )
-    parser.add_argument(
         "--iterations",
         type=int,
         default=3,

@@ -555,7 +555,7 @@ def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Run minimum fit oxonfair with specified iterations",
+        description="Run fit_fair_frontiers with specified iterations",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(

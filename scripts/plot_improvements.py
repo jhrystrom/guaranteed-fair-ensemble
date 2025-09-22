@@ -21,6 +21,7 @@ import guaranteed_fair_ensemble.names
 from guaranteed_fair_ensemble.config import get_dataset_info
 from guaranteed_fair_ensemble.constants import (
     ALL_METHODS,
+    DATASET_HPARAMS,
     FAIRRET_SCALES,
     SIMPLE_BASELINES,
 )
@@ -723,7 +724,8 @@ if __name__ == "__main__":
         "--methods",
         type=str,
         nargs="+",
-        required=True,
+        default=["all"],
+        choices=["all", *ALL_METHODS],
         help="Name of the method to evaluate",
     )
     parser.add_argument(
@@ -737,7 +739,8 @@ if __name__ == "__main__":
         type=str,
         nargs="+",
         required=True,
-        choices=["papila", "ham10000", "fitzpatrick17k", "fairvlmed"],
+        default=[ds.name for ds in DATASET_HPARAMS],
+        choices=[ds.name for ds in DATASET_HPARAMS],
     )
     parser.add_argument(
         "--iterations",
