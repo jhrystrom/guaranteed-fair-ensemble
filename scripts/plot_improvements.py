@@ -222,20 +222,13 @@ def plot_dataset(
             (pl.col("improvement") - erm_improvement).alias("relative_improvement"),
         )
     )
-    normalise_method_names = (
-        pl.when(pl.col("method").str.ends_with("multi"))
-        .then(pl.lit("FairEnsemble"))
-        .when(pl.col("method").str.contains("fairret"))
-        .then(pl.lit("fairret"))
-        .otherwise(pl.col("method"))
-        .alias("method")
-    )
+
     logger.debug(
         f"Plotting mean: {plot_df.group_by('method').agg(pl.col('improvement').mean())}"
     )
 
     ax = sns.barplot(
-        plot_df.with_columns(normalise_method_names),
+        plot_df.with_columns(guaranteed_fair_ensemble.names.normalise_method_names),
         x="method",
         y="relative_improvement",
         hue="MethodType",

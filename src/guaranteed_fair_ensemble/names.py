@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 
+import polars as pl
 from loguru import logger
 
 from guaranteed_fair_ensemble.config import args_to_info, get_dataset_info
@@ -152,3 +153,13 @@ def get_fairensemble_file_path(
     )
     logger.debug(f"FairEnsemble file path: {path.name}")
     return path
+
+
+normalise_method_names = (
+    pl.when(pl.col("method").str.ends_with("multi"))
+    .then(pl.lit("FairEnsemble"))
+    .when(pl.col("method").str.contains("fairret"))
+    .then(pl.lit("fairret"))
+    .otherwise(pl.col("method"))
+    .alias("method")
+)

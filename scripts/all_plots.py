@@ -2,7 +2,7 @@ import subprocess
 
 # Define your plots and args here
 plots = {
-    "plot_vision_frontiers": [],
+    "plot_vision_frontiers": ["--methods=all"],
     "plot_improvements": [],
     # TODO: Competence plots
     # TODO: NLP plots

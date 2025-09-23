@@ -84,7 +84,7 @@ def get_middle_predictions(
 
 def filter_ensemble_methods(threshold_df: pl.DataFrame) -> pl.DataFrame:
     """Filter to only keep the best (biggest) ensemble method for each type"""
-    fair_filter = pl.col("method_type").is_in(["Multi", "Joint"])
+    fair_filter = pl.col("method_type").is_in(["Multi"])
     top_fair = (
         threshold_df.filter(fair_filter)
         .with_columns(
@@ -153,8 +153,6 @@ def main(
     method_type_identifier = (
         pl.when(pl.col("method").str.contains(r"\dmulti"))
         .then(pl.lit("Multi"))
-        .when(pl.col("method").str.contains("joint"))
-        .then(pl.lit("Joint"))
         .otherwise(pl.lit("Baseline"))
         .alias("method_type")
     )
@@ -179,17 +177,6 @@ def main(
 
     threshold_df = filter_ensemble_methods(threshold_df)
     threshold_df, fairret_removal = filter_fairret(threshold_df)
-
-    normalise_method_names = (
-        pl.when(pl.col("method").str.ends_with("multi"))
-        .then(pl.lit("multi"))
-        .when(pl.col("method").str.ends_with("joint"))
-        .then(pl.lit("joint"))
-        .when(pl.col("method").str.contains("fairret"))
-        .then(pl.lit("fairret"))
-        .otherwise(pl.col("method"))
-        .alias("method")
-    )
 
     threshold_df
 
@@ -254,7 +241,7 @@ def main(
     averaged_threshold_df = (
         plot_threshold_df.group_by("method", "threshold", "dataset", "fairness_metric")
         .mean()
-        .with_columns(normalise_method_names)
+        .with_columns(guaranteed_fair_ensemble.names.normalise_method_names)
         .with_columns(pl.col("method").replace(reversed_domain_disc))
     )
     logger.debug(f"{averaged_threshold_df['method'].unique().to_list()}")
@@ -325,14 +312,8 @@ def generate_filter(average_performance: pl.DataFrame) -> pl.Expr:
         .sort("rank")["method"]
         .first()
     )
-    best_joint = (
-        average_performance.filter(pl.col("method_type") == "Joint")
-        .sort("rank")["method"]
-        .first()
-    )
     multi_filter = (pl.col("method_type") == "Multi") & (pl.col("method") != best_multi)
-    joint_filter = (pl.col("method_type") == "Joint") & (pl.col("method") != best_joint)
-    combined_filter = ~multi_filter & ~joint_filter
+    combined_filter = ~multi_filter
     return combined_filter
 
 
@@ -400,7 +381,7 @@ def single_evaluate_violations(
     threshold_df: pl.DataFrame, metric: str = "min_recall"
 ) -> pl.DataFrame:
     method_df = threshold_df.filter(
-        pl.col("method").str.contains("joint|multi") | (pl.col("method") == "oxonfair")
+        pl.col("method").str.contains("multi") | (pl.col("method") == "oxonfair")
     )
     comparison = (
         pl.col(metric) - pl.col("threshold")
@@ -547,7 +528,7 @@ def get_fairensemble_thresholds(
 ) -> pl.DataFrame:
     if backbone != "efficientnet_s":
         raise ValueError("Backbone must be efficientnet_s for multiensemble")
-    methods = ["joint", "multi"]
+    methods = ["multi"]
     validation_dfs = [
         pl.read_csv(
             guaranteed_fair_ensemble.names.get_fairensemble_file_path(
@@ -584,15 +565,9 @@ def get_fairensemble_thresholds(
         ]
     )
     val_rank = (
-        improvement.with_columns(
-            pl.col("method").str.contains("join").alias("is_joint")
-        )
-        .unique(subset=["method", "is_joint", "improvement"])
+        improvement.unique(subset=["method", "improvement"])
         .with_columns(
-            pl.col("improvement")
-            .rank("min", descending=True)
-            .over("is_joint")
-            .alias("val_rank")
+            pl.col("improvement").rank("min", descending=True).alias("val_rank")
         )
         .select("method", "val_rank", pl.col("improvement").alias("val_improvement"))
     )
