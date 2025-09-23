@@ -13,8 +13,7 @@ def _get_baseline_colours(baselines: list[str]) -> dict[str, Colour]:
 def _get_fairensemble_colours() -> dict[str, Colour]:
     palette = sns.color_palette("Dark2", n_colors=3)
     return {
-        "joint": palette[0],
-        "multi": palette[1],  # Dark
+        "FairEnsemble": palette[0],  # Dark
     }
 
 
@@ -30,7 +29,7 @@ def get_method_type_colours() -> dict[str, Colour]:
     baseline_colour = ALL_BASELINES[1]
     return {
         "Baseline": all_methods[baseline_colour],
-        "FairEnsemble (ours)": all_methods["joint"],
+        "FairEnsemble (ours)": all_methods["FairEnsemble"],
     }
 
 

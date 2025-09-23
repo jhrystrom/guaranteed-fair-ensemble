@@ -224,9 +224,7 @@ def plot_dataset(
     )
     normalise_method_names = (
         pl.when(pl.col("method").str.ends_with("multi"))
-        .then(pl.lit("multi"))
-        .when(pl.col("method").str.ends_with("joint"))
-        .then(pl.lit("joint"))
+        .then(pl.lit("FairEnsemble"))
         .when(pl.col("method").str.contains("fairret"))
         .then(pl.lit("fairret"))
         .otherwise(pl.col("method"))
@@ -341,14 +339,8 @@ def generate_filter(average_performance: pl.DataFrame) -> pl.Expr:
         .sort("rank")["method"]
         .first()
     )
-    best_joint = (
-        average_performance.filter(pl.col("method_type") == "Joint")
-        .sort("rank")["method"]
-        .first()
-    )
     multi_filter = (pl.col("method_type") == "Multi") & (pl.col("method") != best_multi)
-    joint_filter = (pl.col("method_type") == "Joint") & (pl.col("method") != best_joint)
-    combined_filter = ~multi_filter & ~joint_filter
+    combined_filter = ~multi_filter
     return combined_filter
 
 
@@ -451,65 +443,6 @@ def get_test_labels(dataset: str, iteration: int = 0) -> tuple[np.ndarray, np.nd
     ].to_numpy()
 
 
-@profile
-@cache
-def calculate_random_thresholds(
-    num_threshold: int = 100,
-    seed: int = 0,
-    dataset: str = "papila",
-    iteration: int = 0,
-    minimum_threshold: float = 0.0,
-) -> pl.DataFrame:
-    test_labels, test_groups = get_test_labels(dataset=dataset, iteration=iteration)
-    np.random.seed(seed=seed)
-    random_baselines = np.random.uniform(low=0, high=1, size=(len(test_labels)))
-    thresholds = np.linspace(minimum_threshold, 1, num_threshold)
-    results = []
-    for threshold in thresholds:
-        metrics = evaluate_threshold(
-            test_labels, random_baselines, test_groups, threshold=threshold
-        )
-        results.append(metrics)
-    return pl.DataFrame(results).with_columns(
-        pl.lit("random").alias("method"),
-        pl.lit(iteration).alias("iteration"),
-    )
-
-
-def get_single_random_baseline(
-    seed: int = 0, dataset: str = "fitzpatrick17k"
-) -> pl.DataFrame:
-    test_labels, test_groups = get_test_labels(dataset=dataset)
-    np.random.seed(seed=seed)
-    metrics = evaluate_threshold(
-        test_labels,
-        np.random.uniform(low=0, high=1, size=(len(test_labels))),
-        test_groups,
-    )
-    return pl.DataFrame([metrics]).with_columns(
-        pl.lit("random").alias("method"),
-        pl.lit(0).alias("iteration"),
-    )
-
-
-def get_single_trivial_baseline(
-    seed: int = 0, dataset: str = "fitzpatrick17k"
-) -> pl.DataFrame:
-    test_labels, test_groups = get_test_labels(dataset=dataset)
-    np.random.seed(seed=seed)
-    # No one is sick
-    trivial_scores = np.zeros(len(test_labels))
-    metrics = evaluate_threshold(
-        test_labels,
-        trivial_scores,
-        test_groups,
-    )
-    test_labels.mean()
-    return pl.DataFrame([metrics]).with_columns(
-        pl.lit("random").alias("method"),
-    )
-
-
 def check_fairret_path(
     path: Path, iteration: int = 0, backbone: str = "efficientnet"
 ) -> bool:
@@ -563,7 +496,7 @@ def get_fairensemble_thresholds(
 ) -> pl.DataFrame:
     if backbone != "efficientnet_s":
         raise ValueError("Backbone must be efficientnet_s for multiensemble")
-    methods = ["joint", "multi"]
+    methods = ["multi"]
     validation_dfs = [
         pl.read_csv(
             guaranteed_fair_ensemble.names.get_fairensemble_file_path(
@@ -600,15 +533,9 @@ def get_fairensemble_thresholds(
         ]
     )
     val_rank = (
-        improvement.with_columns(
-            pl.col("method").str.contains("join").alias("is_joint")
-        )
-        .unique(subset=["method", "is_joint", "improvement"])
+        improvement.unique(subset=["method", "improvement"])
         .with_columns(
-            pl.col("improvement")
-            .rank("min", descending=True)
-            .over("is_joint")
-            .alias("val_rank")
+            pl.col("improvement").rank("min", descending=True).alias("val_rank")
         )
         .select("method", "val_rank", pl.col("improvement").alias("val_improvement"))
     )
@@ -719,6 +646,9 @@ def main(
 
 
 if __name__ == "__main__":
+    eligible_datasets = [
+        ds.name for ds in DATASET_HPARAMS if ds.fairness_metric == "min_recall"
+    ]
     parser = argparse.ArgumentParser(description="Evaluate Fitzpatrick Frontier")
     parser.add_argument(
         "--methods",
@@ -738,9 +668,8 @@ if __name__ == "__main__":
         "--datasets",
         type=str,
         nargs="+",
-        required=True,
-        default=[ds.name for ds in DATASET_HPARAMS],
-        choices=[ds.name for ds in DATASET_HPARAMS],
+        default=eligible_datasets,
+        choices=eligible_datasets,
     )
     parser.add_argument(
         "--iterations",
