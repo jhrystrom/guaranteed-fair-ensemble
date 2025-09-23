@@ -246,11 +246,20 @@ def main(
     )
     logger.debug(f"{averaged_threshold_df['method'].unique().to_list()}")
 
-    # change the aspect ratio
-    sns.set_theme(style="whitegrid", font_scale=1.3)
-    # Create a larger figure
-    plt.figure(figsize=(10, 6))
-    fontsize = 21
+    # --- Wide layout + simple font control via Seaborn ---------------------------
+    N_COLS = 3  # always 3 datasets
+    TARGET_WIDTH_IN = 18.0  # make it wide for the paper
+    PANEL_HEIGHT_IN = 5.0  # facet height
+    FONT_SCALE = 2.0  # <— tweak this single number
+
+    # Compute relplot geometry from width target
+    aspect = TARGET_WIDTH_IN / (N_COLS * PANEL_HEIGHT_IN)
+    height = PANEL_HEIGHT_IN
+
+    # One place to control fonts
+    sns.set_theme(style="whitegrid", font_scale=FONT_SCALE)
+    plt.rcParams["legend.markerscale"] = 1.25
+
     g = sns.relplot(
         averaged_threshold_df.sort("fairness_metric", "dataset", descending=True),
         x="fairness_value",
@@ -258,15 +267,17 @@ def main(
         y="accuracy",
         hue="method",
         style="method",
-        s=75,
+        s=225,
+        height=height,
+        aspect=aspect,
         palette=guaranteed_fair_ensemble.colors.get_method_colours(),
         facet_kws={"sharey": True, "sharex": False},
     )
-    # Custom x-labels based on fairness_metric
+
+    # X labels per dataset's fairness metric
     dataset_to_metric = averaged_threshold_df.group_by("dataset").agg(
         pl.col("fairness_metric").first()
     )
-    print(f"{dataset_to_metric=}")
     dataset_to_metric = {
         row["dataset"]: (
             "Min Recall"
@@ -275,28 +286,25 @@ def main(
         )
         for row in dataset_to_metric.iter_rows(named=True)
     }
-    logger.debug(f"{dataset_to_metric=}")
+    label_size = 25
     for ax, dataset in zip(g.axes.flat, g.col_names):
-        ax.set_xlabel(dataset_to_metric[dataset], fontsize=fontsize)
-    g.set_ylabels("Accuracy", fontsize=fontsize)
-    g.set_titles("{col_name}")
-    # Move legend to the bottom with
+        ax.set_xlabel(dataset_to_metric[dataset], fontsize=label_size)
 
+    g.set_ylabels("Accuracy", fontsize=label_size)
+    g.set_titles("{col_name}")
+
+    # Legend at bottom; let Seaborn handle font sizes (no manual overrides)
     sns.move_legend(
         g,
         "lower center",
-        bbox_to_anchor=(0.45, -0.2),
-        ncol=(averaged_threshold_df["method"].n_unique() + 1) // 2,
+        bbox_to_anchor=(0.5, -0.15),
+        ncol=max(1, int(averaged_threshold_df["method"].n_unique())),
         title=None,
         frameon=True,
     )
-    leg = g._legend
-    for text in leg.get_texts():
-        text.set_fontsize(20)
-    leg.get_frame().set_linewidth(1.2)
-    leg.get_frame().set_edgecolor("gray")
 
-    # plt.title(f"Pareto Frontier for {dataset.capitalize()}")
+    g.figure.set_constrained_layout(True)
+
     plt.savefig(
         PLOT_DIR
         / f"{backbone}-all_datasets-all_iterations-all_threshold_evaluation.png",
