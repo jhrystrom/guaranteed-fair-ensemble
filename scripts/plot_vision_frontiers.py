@@ -307,7 +307,7 @@ def main(
 
     plt.savefig(
         PLOT_DIR
-        / f"{backbone}-all_datasets-all_iterations-all_threshold_evaluation.png",
+        / f"{backbone}-all_datasets-all_iterations-all_threshold_evaluation.pdf",
         dpi=300,
         bbox_inches="tight",
     )

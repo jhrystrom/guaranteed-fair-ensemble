@@ -272,7 +272,7 @@ def plot_dataset(
     plt.tight_layout()
     plt.savefig(
         PLOT_DIR
-        / f"{backbone}-{dataset}-all_threshold_evaluation_{fairness_metric}_improvement.png",
+        / f"{backbone}-{dataset}-all_threshold_evaluation_{fairness_metric}_improvement.pdf",
     )
     plt.clf()
 
