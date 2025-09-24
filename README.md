@@ -8,7 +8,7 @@ uv sync
 ```
 
 ## Datasets
-TODO
+For a description of how to get the datasets, see the appendices of the main paper. The relevant images and datasets must be placed under whatever directory you specify in the `DATA_DIR` environment (see, e.g., [`fitzpatrick17k.py`](./src/guaranteed_fair_ensemble/data/fitzpatrick17k.py)).
 
 ## Running the analysis (medical imaging)
 ### Training models + classifiers
@@ -24,7 +24,7 @@ Note, this will train a lot of different models and take quite some time.
 Once you've trained the models, you can fit the fair frontiers and run predictions on the test set. This can be done using the following command: 
 
 ```bash
-uv run scripts/fit_fair_frotniers --dataset <dataset>
+uv run scripts/fit_fair_frontiers --dataset <dataset>
 ```
 
 ### Reproducing plots
@@ -37,4 +37,4 @@ uv run scripts/all_plots.py
 This will populate the `plots/` directory with plots from the paper. Currently, only some parts are supported
 
 ## NLP analysis (hate speech)
-TODO
+For instructions to reproduce the hate speech analysis, see the [`nlp/`](./nlp/README.md) subfolder.
