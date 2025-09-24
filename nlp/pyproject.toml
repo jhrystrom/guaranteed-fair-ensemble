@@ -1,0 +1,24 @@
+[project]
+name = "fairensemble-nlp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "expviz>=0.0.4",
+    "hyperparse>=0.0.8",
+    "imbalanced-learn>=0.14.0",
+    "keras>=2.3.1",
+    "loguru>=0.7.3",
+    "matplotlib>=3.1.3",
+    "nltk>=3.4.5",
+    "numpy>=1.18.1",
+    "oxonfair>=0.2.1.9",
+    "pandas>=1.0.1",
+    "python-dotenv>=1.1.1",
+    "scikit-learn>=0.22.2",
+    "tensorflow>=2.3.1",
+    "torch>=1.4.0",
+    "tqdm>=4.43.0",
+    "transformers>=4.21.0",
+]

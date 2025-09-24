@@ -2,6 +2,7 @@
 output/temp
 data/
 !src/**/data/
+!nlp/**/data/
 *.npy
 
 # Profile
