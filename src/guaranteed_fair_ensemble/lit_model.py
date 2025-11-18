@@ -20,6 +20,7 @@ class LitMultiHead(L.LightningModule):
         self,
         model: EfficientNet | MobileNetV3,
         lr: float = 1e-4,
+        scaling: float = 1.0, # Currently unused; placeholder for compatibility
         freeze_backbone: bool = True,
         log_per_head_val_loss: bool = True,
         tie_strategy: str = "mean_prob",  # 'mean_prob' | 'positive' | 'negative'

@@ -80,7 +80,7 @@ def get_model_for_method(method: str, backbone_name: str, **kwargs):
     Returns:
         Model instance appropriate for the specified method
     """
-    if method in {"standard", "ensemble"}:
+    if method in {"erm_ensemble", "ensemble"}:
         return get_backbone(backbone_name, **kwargs)
 
     if method == "domain_independent":
@@ -141,6 +141,13 @@ def initialize_model_checkpoint(
         method=model_info.method, backbone_name=model_info.backbone, num_heads=num_heads
     )
     num_domains = num_heads - 1
+    if model_info.method == "erm_ensemble":
+        from guaranteed_fair_ensemble.lit_model import LitMultiHead
+
+
+        return LitMultiHead.load_from_checkpoint(
+            checkpoint_path, model=model, num_heads=num_heads
+        )
     if model_info.method == "domain_independent":
         from guaranteed_fair_ensemble.models.domain_independent_lit import (
             DomainIndependentLitModule,

@@ -186,6 +186,7 @@ def _single_run(
     data_dir: Path,
     results_dir: Path,
     device: torch.device,
+    ensemble_members: int,
     iteration: int | None = None,
 ) -> None:
     """Run the classic train -> val -> test loop for *one* model."""
@@ -242,7 +243,7 @@ def _single_run(
     model = get_model_for_method(
         method=args.training_method,
         backbone_name=args.backbone,
-        num_heads=num_heads,
+        num_heads=num_heads if args.training_method != "erm_ensemble" else ensemble_members,
     )
 
     lit_model, ckpt_path = train_model(
@@ -662,6 +663,7 @@ def main() -> None:
                 data_dir=data_dir,
                 results_dir=results_dir,
                 device=device,
+                ensemble_members=training_info.model.ensemble_members,
                 iteration=current_iteration if iterations > 1 else None,
             )
 

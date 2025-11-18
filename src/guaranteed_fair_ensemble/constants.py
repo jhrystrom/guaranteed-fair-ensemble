@@ -18,6 +18,7 @@ DATASET_HPARAMS: Final[list[DatasetInfo]] = [
     ),
 ]
 
+ENSEMBLE_BASELINES = ["erm_ensemble"]
 SIMPLE_BASELINES = [
     "erm",
     "domain_independent",
