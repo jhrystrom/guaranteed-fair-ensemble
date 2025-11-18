@@ -104,13 +104,13 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="standard",
         choices=[
-            "standard",
             "rebalance",
             "domain_independent",
             "domain_discriminative",
             "erm",
             "fairret",
             "ensemble",
+            "erm_ensemble",
         ],
         help="Training method to use",
     )

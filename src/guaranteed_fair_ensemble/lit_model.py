@@ -114,7 +114,7 @@ def get_lit_model_for_method(method: str, model: nn.Module, **kwargs):
     Returns:
         Lightning module appropriate for the specified method
     """
-    if method == "standard":
+    if method == "erm_ensemble":
         return LitMultiHead(model, **kwargs)
     if method == "domain_independent":
         from guaranteed_fair_ensemble.models.domain_independent_lit import (
