@@ -1,13 +1,52 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import lightning as L
 import torch
 import torch.optim as optim
 from loguru import logger
+from torch import nn
 from torchvision.models import EfficientNet, MobileNetV3
 
-from guaranteed_fair_ensemble.lit_model import total_loss
+
+class LossOutput(NamedTuple):
+    full_loss: torch.Tensor
+    classification_loss: torch.Tensor
+    protected_loss: torch.Tensor
+
+
+def total_loss(pred: torch.Tensor, true: torch.Tensor, scaling: float) -> LossOutput:
+    """
+    Combined loss function for multi-head model
+    First head uses BCE loss for binary classification
+    Remaining heads use MSE loss for protected attribute prediction
+
+    Args:
+        pred: Model predictions
+        true: Ground truth labels
+        scaling: Weight for the protected attribute loss
+
+    Returns:
+        Combined loss value
+    """
+    num_heads = pred.shape[1]
+    bce = nn.BCEWithLogitsLoss()
+    mse = nn.MSELoss()
+
+    # Task loss (binary classification)
+    classification_loss = bce(pred[:, 0], true[:, 0])
+
+    # Protected attribute loss
+    protected_loss = 0
+    for i in range(1, num_heads):
+        protected_loss += mse(pred[:, i], true[:, i])
+
+    full_loss = classification_loss + scaling * protected_loss
+    return LossOutput(
+        full_loss=full_loss,
+        classification_loss=classification_loss,
+        protected_loss=protected_loss,
+    )
 
 
 class FairEnsemble(L.LightningModule):
