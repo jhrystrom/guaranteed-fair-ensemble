@@ -243,7 +243,9 @@ def _single_run(
     model = get_model_for_method(
         method=args.training_method,
         backbone_name=args.backbone,
-        num_heads=num_heads if args.training_method != "erm_ensemble" else ensemble_members,
+        num_heads=num_heads
+        if args.training_method != "erm_ensemble"
+        else ensemble_members,
     )
 
     lit_model, ckpt_path = train_model(
@@ -252,6 +254,7 @@ def _single_run(
         train_loader=train_loader,
         val_loader=val_loader,
         data_dir=data_dir,
+        iteration=iteration,
     )
     print(f"Training completed. Best checkpoint: {ckpt_path}")
 
