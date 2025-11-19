@@ -44,8 +44,6 @@ def get_sizes(dataset_name: str) -> tuple[float, float]:
     raise ValueError(f"Dataset '{dataset_name}' not found in DATASET_HPARAMS.")
 
 
-    
-
 def construct_minimal_data(
     spec: DatasetSpec, all_features: torch.Tensor, dataframe: pd.DataFrame
 ) -> MinimalData:
@@ -53,9 +51,6 @@ def construct_minimal_data(
     _labels = dataframe[spec.cfg.target_col].to_numpy().astype(np.int8)
     _features = all_features[dataframe.index.to_numpy()]
     return MinimalData(features=_features, groups=_groups, labels=_labels)
-
-
-
 
 
 def analyse_dataset(
@@ -82,29 +77,61 @@ def analyse_dataset(
         model_path = guaranteed_fair_ensemble.names.get_model_path(
             info=training_info, iteration=iteration
         )
-        model: LitMultiHead = initialize_model(training_info=training_info, model_path=model_path).eval().to("cpu")
-        train_df, test_df = guaranteed_fair_ensemble.datasets.split_data(df=full_df, cfg=spec.cfg, random_seed=iter_seed, test_size=dataset_info.test_size)
-        _, val_split = guaranteed_fair_ensemble.datasets.split_data( df=train_df, cfg=spec.cfg, random_seed=iter_seed, test_size=dataset_info.val_size,)
+        model: LitMultiHead = (
+            initialize_model(training_info=training_info, model_path=model_path)
+            .eval()
+            .to("cpu")
+        )
+        train_df, test_df = guaranteed_fair_ensemble.datasets.split_data(
+            df=full_df,
+            cfg=spec.cfg,
+            random_seed=iter_seed,
+            test_size=dataset_info.test_size,
+        )
+        _, val_split = guaranteed_fair_ensemble.datasets.split_data(
+            df=train_df,
+            cfg=spec.cfg,
+            random_seed=iter_seed,
+            test_size=dataset_info.val_size,
+        )
 
-        validation_data = construct_minimal_data( spec=spec, all_features=all_features, dataframe=val_split,)
+        validation_data = construct_minimal_data(
+            spec=spec, all_features=all_features, dataframe=val_split
+        )
 
-        validation_preds = predict_average(classifier=model.classifier, features=validation_data.features)
+        validation_preds = predict_average(
+            classifier=model.classifier, features=validation_data.features
+        )
 
         fpred = oxonfair.DeepFairPredictor(
-            target=validation_data.labels, score=validation_preds, groups=validation_data.groups, use_actual_groups=True
+            target=validation_data.labels,
+            score=validation_preds,
+            groups=validation_data.groups,
+            use_actual_groups=True,
         )
         fpred.fit(gm.accuracy, get_fairness_metric(metric), value=0.005)
         fpred.evaluate()
 
-        test_data = construct_minimal_data( spec=spec, all_features=all_features, dataframe=test_df,)
-        test_predictions = predict_average(classifier=model.classifier, features=test_data.features)
-                
-        test_data_dict= oxonfair.DeepDataDict(
+        test_data = construct_minimal_data(
+            spec=spec, all_features=all_features, dataframe=test_df
+        )
+        test_predictions = predict_average(
+            classifier=model.classifier, features=test_data.features
+        )
+
+        test_data_dict = oxonfair.DeepDataDict(
             test_data.labels,
             test_predictions,
             test_data.groups,
         )
-        raw_result = fpred.evaluate(data=test_data_dict, metrics={"Accuracy": gm.accuracy, "Equal Opportunity": gm.equal_opportunity, "Min Recall": gm.recall.min})
+        raw_result = fpred.evaluate(
+            data=test_data_dict,
+            metrics={
+                "Accuracy": gm.accuracy,
+                "Equal Opportunity": gm.equal_opportunity,
+                "Min Recall": gm.recall.min,
+            },
+        )
 
         result = parse_result(raw_result)
         logger.debug(f"Iteration {iteration} result: {result}")
@@ -118,35 +145,33 @@ def analyse_dataset(
     return pl.concat(result_complete)
 
 
-
-def analyse_all_datasets(overwrite: bool=False) -> None:
+def analyse_all_datasets(overwrite: bool = False) -> None:
     for fairness_metric in ["equal_opportunity", "min_recall"]:
         for dataset_param in DATASET_HPARAMS:
             dataset_name = dataset_param.name
-            file_name = OUTPUT_DIR / f"{dataset_name}-{fairness_metric}_ensemble_hardt_efficientnet_s_threshold_evaluation.csv"
+            file_name = (
+                OUTPUT_DIR
+                / f"{dataset_name}-{fairness_metric}_ensemble_hardt_efficientnet_s_threshold_evaluation.csv"
+            )
             if file_name.exists() and not overwrite:
-                logger.info(f"Results for dataset '{dataset_name}' and metric '{fairness_metric}' already exist at '{file_name}'. Skipping...")
+                logger.info(
+                    f"Results for dataset '{dataset_name}' and metric '{fairness_metric}' already exist at '{file_name}'. Skipping..."
+                )
                 continue
             logger.info(f"Analysing dataset: {dataset_name}")
-            dataset_result = analyse_dataset(dataset=dataset_name, min_iteration=0, max_iterations=3)
+            dataset_result = analyse_dataset(
+                dataset=dataset_name, min_iteration=0, max_iterations=3
+            )
             dataset_result.write_csv(file_name)
-
-
-
-
-
-
-
-
-
-
 
 
 def parse_result(raw_result: pd.DataFrame) -> Result:
     updated_scores = raw_result["updated"].to_dict()
-    return Result(accuracy=updated_scores["Accuracy"],
-                  equal_opportunity=updated_scores["Equal Opportunity"],
-                  min_recall=updated_scores["Minimal Group Recall"])
+    return Result(
+        accuracy=updated_scores["Accuracy"],
+        equal_opportunity=updated_scores["Equal Opportunity"],
+        min_recall=updated_scores["Minimal Group Recall"],
+    )
 
 
 def predict_average(classifier, features):
@@ -155,14 +180,21 @@ def predict_average(classifier, features):
     mean_probs = sigmoids.mean(dim=1).reshape(-1, 1)
     return mean_probs.cpu().detach().numpy()
 
+
 def initialize_model(
     training_info: TrainingInfo,
     model_path: Path,
 ) -> LitMultiHead:
     spec = get_dataset(name=training_info.dataset.name)
     num_heads = (
-        spec.cfg.num_protected_classes + 1 if spec.cfg.num_protected_classes > 2 else 2
-    ) if training_info.model.method != "erm_ensemble" else training_info.model.ensemble_members
+        (
+            spec.cfg.num_protected_classes + 1
+            if spec.cfg.num_protected_classes > 2
+            else 2
+        )
+        if training_info.model.method != "erm_ensemble"
+        else training_info.model.ensemble_members
+    )
     logger.info(
         f"Initializing model for metho '{training_info.model.method}' with {num_heads} heads"
     )
@@ -171,7 +203,6 @@ def initialize_model(
         model_info=model_info, checkpoint_path=model_path, num_heads=num_heads
     )
     return lit_model
-
 
 
 if __name__ == "__main__":
