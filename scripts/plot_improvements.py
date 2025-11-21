@@ -157,7 +157,8 @@ def plot_dataset(
                     pl.lit(iteration).alias("iteration"),
                 )
                 for method in tqdm(methods)
-            ]
+            ],
+            how="vertical_relaxed",
         )
         all_thresholds.append(temp_threshold_df)
 
@@ -171,17 +172,18 @@ def plot_dataset(
         .otherwise(pl.lit("Baseline"))
         .alias("method_type")
     )
-    domain_disc_names = {
+    new_names = {
         "domain_discriminative": "DomainDisc",
         "domain_independent": "DomainInd",
+        "hpp_ensemble": "Ensemble (HPP)",
     }
 
     threshold_df: pl.DataFrame = (
         pl.concat(all_thresholds)
         .filter(pl.col("threshold") > metric_minimum)
+        .with_columns(pl.col("method").replace(new_names))
         .with_columns(method_type_identifier)
         .with_columns(pl.col("method").str.replace("_ensemble", ""))
-        .with_columns(pl.col("method").replace(domain_disc_names))
     )
 
     threshold_df = filter_ensemble_methods(threshold_df)
@@ -460,6 +462,10 @@ def get_thresholds(
         return _get_baseline_threshold(
             model_info=model_info, iteration=iteration, dataset_name=dataset
         ).with_columns(pl.lit(method_name).alias("method"), _val_rank)
+    if method_name == "hpp_ensemble":
+        return _get_baseline_threshold(
+            model_info=model_info, iteration=iteration, dataset_name=dataset
+        ).with_columns(pl.lit(method_name).alias("method"), pl.lit(1).alias("val_rank"))
     if method_name == "fairret":
         combined_dfs = get_fairret_thresholds(dataset, iteration, model_info)
         return combined_dfs

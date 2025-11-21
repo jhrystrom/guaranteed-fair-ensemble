@@ -138,6 +138,7 @@ def analyse_dataset(
     dataset_info = get_dataset_info(dataset)
     logger.debug(f"Dataset info: {dataset_info}")
     model_info = ModelInfo(method="erm_ensemble", backbone="efficientnet_s")
+    new_model_info = ModelInfo(method="hpp_ensemble", backbone="efficientnet_s")
     training_info = TrainingInfo(dataset=dataset_info, model=model_info)
     spec = get_dataset(dataset)
     full_df = spec.load_and_clean_data(DATA_DIR)
@@ -149,7 +150,7 @@ def analyse_dataset(
     result_complete = []
     for iteration in iterations:
         file_name = guaranteed_fair_ensemble.names.create_baseline_save_path(
-            iteration=iteration, model_info=model_info, dataset_name=dataset
+            iteration=iteration, model_info=new_model_info, dataset_name=dataset
         )
         if file_name.exists() and not overwrite:
             logger.info(
@@ -265,7 +266,6 @@ def analyse_dataset(
                     "Min Recall": gm.recall.min,
                 },
             )
-
             result = parse_result(raw_result)
             logger.debug(f"Iteration {iteration} result: {result}")
             results_df = pl.DataFrame([result]).with_columns(

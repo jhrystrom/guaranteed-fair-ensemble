@@ -18,13 +18,12 @@ DATASET_HPARAMS: Final[list[DatasetInfo]] = [
     ),
 ]
 
-ENSEMBLE_BASELINES = ["erm_ensemble"]
 SIMPLE_BASELINES = [
     "erm",
     "domain_independent",
     "domain_discriminative",
 ]
-ALL_BASELINES = [*SIMPLE_BASELINES, "fairret", "ensemble", "oxonfair", "erm_ensemble"]
+ALL_BASELINES = [*SIMPLE_BASELINES, "fairret", "ensemble", "oxonfair", "hpp_ensemble"]
 ALL_METHODS = ["multiensemble", *ALL_BASELINES]
 FAIRRET_SCALES = [0.5, 0.75, 1.0, 1.25, 1.5]
 ITERATIONS = 3
