@@ -58,8 +58,10 @@ def analyse_dataset(
     metric: str = "equal_opportunity",
     min_iteration: int = 0,
     max_iterations: int = 3,
+    overwrite: bool = False,
 ) -> pl.DataFrame:
     # Get dataset and so on
+
     dataset_info = get_dataset_info(dataset)
     logger.debug(f"Dataset info: {dataset_info}")
     model_info = ModelInfo(method="erm_ensemble", backbone="efficientnet_s")
@@ -73,6 +75,16 @@ def analyse_dataset(
     logger.info(f"Running iterations: {iterations}")
     result_complete = []
     for iteration in iterations:
+        file_name = guaranteed_fair_ensemble.names.create_baseline_save_path(
+            iteration=iteration, model_info=model_info, dataset_name=dataset
+        )
+        if file_name.exists() and not overwrite:
+            logger.info(
+                f"File {file_name} exists and overwrite is False. Skipping iteration {iteration}."
+            )
+            existing_df = pl.read_csv(file_name)
+            result_complete.append(existing_df)
+            continue
         iter_seed = DEFAULT_SEED + iteration
         model_path = guaranteed_fair_ensemble.names.get_model_path(
             info=training_info, iteration=iteration
@@ -110,7 +122,6 @@ def analyse_dataset(
             use_actual_groups=True,
         )
         fpred.fit(gm.accuracy, get_fairness_metric(metric), value=0.005)
-        fpred.evaluate()
 
         test_data = construct_minimal_data(
             spec=spec, all_features=all_features, dataframe=test_df
@@ -124,6 +135,9 @@ def analyse_dataset(
             test_predictions,
             test_data.groups,
         )
+
+        probas = fpred.predict_proba(test_data_dict)
+
         raw_result = fpred.evaluate(
             data=test_data_dict,
             metrics={
@@ -141,28 +155,24 @@ def analyse_dataset(
             pl.lit(metric).alias("metric"),
             pl.lit(f"{model_info.method}_hardt").alias("method"),
         )
+        results_df.write_csv(file_name)
         result_complete.append(results_df)
     return pl.concat(result_complete)
 
 
 def analyse_all_datasets(overwrite: bool = False) -> None:
-    for fairness_metric in ["equal_opportunity", "min_recall"]:
+    for fairness_metric in ["equal_opportunity"]:
         for dataset_param in DATASET_HPARAMS:
             dataset_name = dataset_param.name
-            file_name = (
-                OUTPUT_DIR
-                / f"{dataset_name}-{fairness_metric}_ensemble_hardt_efficientnet_s_threshold_evaluation.csv"
-            )
-            if file_name.exists() and not overwrite:
-                logger.info(
-                    f"Results for dataset '{dataset_name}' and metric '{fairness_metric}' already exist at '{file_name}'. Skipping..."
-                )
-                continue
             logger.info(f"Analysing dataset: {dataset_name}")
             dataset_result = analyse_dataset(
-                dataset=dataset_name, min_iteration=0, max_iterations=3
+                dataset=dataset_name,
+                min_iteration=0,
+                max_iterations=3,
+                overwrite=overwrite,
+                metric=fairness_metric,
             )
-            dataset_result.write_csv(file_name)
+            logger.debug(f"Dataset {dataset_name} result:\n{dataset_result}")
 
 
 def parse_result(raw_result: pd.DataFrame) -> Result:
