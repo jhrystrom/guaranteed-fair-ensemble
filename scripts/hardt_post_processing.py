@@ -153,7 +153,6 @@ def analyse_dataset(
             pl.lit(iteration).alias("iteration"),
             pl.lit(dataset).alias("dataset"),
             pl.lit(metric).alias("metric"),
-            pl.lit(f"{model_info.method}_hardt").alias("method"),
         )
         results_df.write_csv(file_name)
         result_complete.append(results_df)
@@ -161,18 +160,21 @@ def analyse_dataset(
 
 
 def analyse_all_datasets(overwrite: bool = False) -> None:
-    for fairness_metric in ["equal_opportunity"]:
-        for dataset_param in DATASET_HPARAMS:
-            dataset_name = dataset_param.name
-            logger.info(f"Analysing dataset: {dataset_name}")
-            dataset_result = analyse_dataset(
-                dataset=dataset_name,
-                min_iteration=0,
-                max_iterations=3,
-                overwrite=overwrite,
-                metric=fairness_metric,
-            )
-            logger.debug(f"Dataset {dataset_name} result:\n{dataset_result}")
+    for dataset_param in DATASET_HPARAMS:
+        dataset_name = dataset_param.name
+        fairness_metric = dataset_param.fairness_metric
+        if fairness_metric != "equal_opportunity":
+            logger.warning(f"Not implemented skipping dataset {dataset_name}...")
+            continue
+        logger.info(f"Analysing dataset: {dataset_name}")
+        dataset_result = analyse_dataset(
+            dataset=dataset_name,
+            min_iteration=0,
+            max_iterations=3,
+            overwrite=overwrite,
+            metric=fairness_metric,
+        )
+        logger.debug(f"Dataset {dataset_name} result:\n{dataset_result}")
 
 
 def parse_result(raw_result: pd.DataFrame) -> Result:
