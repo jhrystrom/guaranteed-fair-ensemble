@@ -13,6 +13,7 @@ from oxonfair import group_metrics as gm
 
 import guaranteed_fair_ensemble.backbone
 import guaranteed_fair_ensemble.datasets
+import guaranteed_fair_ensemble.metrics
 import guaranteed_fair_ensemble.names
 import guaranteed_fair_ensemble.preprocess
 from guaranteed_fair_ensemble.config import get_dataset_info
@@ -20,6 +21,7 @@ from guaranteed_fair_ensemble.constants import DATASET_HPARAMS, DEFAULT_SEED
 from guaranteed_fair_ensemble.data.base import DatasetSpec
 from guaranteed_fair_ensemble.data.registry import get_dataset
 from guaranteed_fair_ensemble.data_models import (
+    FairnessMetric,
     MinimalData,
     ModelInfo,
     TrainingInfo,
@@ -51,6 +53,77 @@ def construct_minimal_data(
     _labels = dataframe[spec.cfg.target_col].to_numpy().astype(np.int8)
     _features = all_features[dataframe.index.to_numpy()]
     return MinimalData(features=_features, groups=_groups, labels=_labels)
+
+
+def prediction_over_threshold(
+    val_predictions: pl.DataFrame, prediction_thresholds: list[float]
+) -> pl.DataFrame:
+    _observed_rates = []
+    pred_label = val_predictions["prediction"].to_numpy()
+    groups = val_predictions["protected_attr"].to_numpy()
+    gt_label = val_predictions["true_label"].to_numpy()
+    for pred_threshold in prediction_thresholds:
+        metrics = guaranteed_fair_ensemble.metrics.evaluate_threshold(
+            test_groups=groups,
+            predictions=pred_label,
+            test_labels=gt_label,
+            threshold=pred_threshold,
+        )
+        _observed_rates.append(metrics)
+    observed_rate_df = pl.DataFrame(_observed_rates)
+    return observed_rate_df
+
+
+def find_optimal_threshold(
+    observed_rate_df: pl.DataFrame, fairness_metric: FairnessMetric
+) -> pl.DataFrame:
+    fairness_constraints = (
+        np.linspace(0.5, 1.0, num=11)
+        if fairness_metric == "min_recall"
+        else np.linspace(0.01, 0.15, num=21)
+    )
+    _fairness_thresholds: list[pl.DataFrame] = []
+    for fairness_constraint in fairness_constraints:
+        fairness_filter = (
+            pl.col(fairness_metric) >= fairness_constraint
+            if fairness_metric == "min_recall"
+            else pl.col(fairness_metric) <= fairness_constraint
+        )
+        _fairness_thresholds.append(
+            observed_rate_df.filter(fairness_filter)
+            .top_k(k=1, by="accuracy")
+            .with_columns(pl.lit(fairness_constraint).alias("fairness_thresh"))
+        )
+    fairness_thresholds = pl.concat(_fairness_thresholds).rename(
+        {"threshold": "prediction_threshold"}
+    )
+    return fairness_thresholds
+
+
+def evaluate_row_metric(test_predictions: pl.DataFrame, row: dict[str, float]):
+    row_metrics = guaranteed_fair_ensemble.metrics.evaluate_threshold(
+        test_groups=test_predictions["protected_attr"].to_numpy(),
+        predictions=test_predictions["prediction"].to_numpy(),
+        test_labels=test_predictions["true_label"].to_numpy(),
+        threshold=row["prediction_threshold"],
+    )
+    row_metrics["fairness_thresh"] = row["fairness_thresh"]
+    return row_metrics
+
+
+def compute_thresholded_predictions(
+    test_predictions: pl.DataFrame, fairness_thresholds: pl.DataFrame
+) -> pl.DataFrame:
+    _threshold_predictions = []
+    for row in fairness_thresholds.iter_rows(named=True):
+        _threshold_predictions.append(
+            evaluate_row_metric(pl.DataFrame(test_predictions), row)
+        )
+    return (
+        pl.DataFrame(_threshold_predictions)
+        .drop("threshold")
+        .rename({"fairness_thresh": "threshold"})
+    )
 
 
 def analyse_dataset(
@@ -121,7 +194,11 @@ def analyse_dataset(
             groups=validation_data.groups,
             use_actual_groups=True,
         )
-        fpred.fit(gm.accuracy, get_fairness_metric(metric), value=0.005)
+        constraint_value = 0.005 if metric == "equal_opportunity" else 0.80
+        logger.debug(
+            f"Fitting fairness predictor with constraint {metric}={constraint_value}"
+        )
+        fpred.fit(gm.accuracy, get_fairness_metric(metric), value=constraint_value)
 
         test_data = construct_minimal_data(
             spec=spec, all_features=all_features, dataframe=test_df
@@ -136,26 +213,69 @@ def analyse_dataset(
             test_data.groups,
         )
 
-        probas = fpred.predict_proba(test_data_dict)
+        if metric == "min_recall":
+            val_probas = fpred.predict_proba(
+                oxonfair.DeepDataDict(
+                    validation_data.labels,
+                    validation_preds,
+                    validation_data.groups,
+                ),
+                force_normalization=True,
+            )[:, 1]
+            prediction_thresholds = np.linspace(0.0, 1.0, num=101)
+            val_pred_df = pl.DataFrame(
+                {
+                    "prediction": val_probas,
+                    "protected_attr": validation_data.groups,
+                    "true_label": validation_data.labels,
+                }
+            )
+            observed_rate_df = prediction_over_threshold(
+                val_predictions=val_pred_df,
+                prediction_thresholds=prediction_thresholds.tolist(),
+            )
+            fairness_thresholds = find_optimal_threshold(
+                observed_rate_df=observed_rate_df,
+                fairness_metric="min_recall",
+            )
+            test_probas = fpred.predict_proba(
+                test_data_dict,
+                force_normalization=True,
+            )[:, 1]
+            test_pred_df = pl.DataFrame(
+                {
+                    "prediction": test_probas,
+                    "protected_attr": test_data.groups,
+                    "true_label": test_data.labels,
+                }
+            )
+            final_fairness_thresholds = compute_thresholded_predictions(
+                test_predictions=test_pred_df, fairness_thresholds=fairness_thresholds
+            )
 
-        raw_result = fpred.evaluate(
-            data=test_data_dict,
-            metrics={
-                "Accuracy": gm.accuracy,
-                "Equal Opportunity": gm.equal_opportunity,
-                "Min Recall": gm.recall.min,
-            },
-        )
+            final_fairness_thresholds.write_csv(file_name)
+            result_complete.append(final_fairness_thresholds)
 
-        result = parse_result(raw_result)
-        logger.debug(f"Iteration {iteration} result: {result}")
-        results_df = pl.DataFrame([result]).with_columns(
-            pl.lit(iteration).alias("iteration"),
-            pl.lit(dataset).alias("dataset"),
-            pl.lit(metric).alias("metric"),
-        )
-        results_df.write_csv(file_name)
-        result_complete.append(results_df)
+        else:
+            raw_result = fpred.evaluate(
+                data=test_data_dict,
+                metrics={
+                    "Accuracy": gm.accuracy,
+                    "Equal Opportunity": gm.equal_opportunity,
+                    "Min Recall": gm.recall.min,
+                },
+            )
+
+            result = parse_result(raw_result)
+            logger.debug(f"Iteration {iteration} result: {result}")
+            results_df = pl.DataFrame([result]).with_columns(
+                pl.lit(iteration).alias("iteration"),
+                pl.lit(dataset).alias("dataset"),
+                pl.lit(metric).alias("metric"),
+                pl.lit(0.5).alias("threshold"),
+            )
+            results_df.write_csv(file_name)
+            result_complete.append(results_df)
     return pl.concat(result_complete)
 
 
@@ -163,10 +283,7 @@ def analyse_all_datasets(overwrite: bool = False) -> None:
     for dataset_param in DATASET_HPARAMS:
         dataset_name = dataset_param.name
         fairness_metric = dataset_param.fairness_metric
-        if fairness_metric != "equal_opportunity":
-            logger.warning(f"Not implemented skipping dataset {dataset_name}...")
-            continue
-        logger.info(f"Analysing dataset: {dataset_name}")
+        logger.info(f"Analysing dataset: {dataset_name} (metric: {fairness_metric})")
         dataset_result = analyse_dataset(
             dataset=dataset_name,
             min_iteration=0,
@@ -218,4 +335,4 @@ def initialize_model(
 
 
 if __name__ == "__main__":
-    analyse_all_datasets(overwrite=False)
+    analyse_all_datasets(overwrite=True)

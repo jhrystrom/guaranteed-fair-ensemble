@@ -63,7 +63,9 @@ def get_middle_predictions(
                 is_val=False,
             )
             baseline_observed_path = (
-                OUTPUT_DIR / "temp" / f"{baseline_path.stem}_observed_rates.csv"
+                (OUTPUT_DIR / "temp" / f"{baseline_path.stem}_observed_rates.csv")
+                if model_info.method != "erm_ensemble"
+                else baseline_path
             )
             if not baseline_observed_path.exists():
                 raise FileNotFoundError(f"Missing {baseline_observed_path}")
@@ -120,15 +122,21 @@ def filter_fairret(threshold_df: pl.DataFrame) -> tuple[pl.DataFrame, pl.Expr]:
 @profile
 def main(
     methods: list[str],
+    datasets: list[str],
     backbone: str = "efficientnet_s",
     iterations: int = 3,
 ) -> None:
     sns.set_theme(style="whitegrid", font_scale=1.25)
     if "all" in methods:
         methods = ALL_METHODS
+    if "all" in datasets:
+        datasets = [data_info.name for data_info in DATASET_HPARAMS]
     # Load the predictions
     all_thresholds = []
     for dataset in DATASET_HPARAMS:
+        if dataset.name not in datasets:
+            logger.info(f"Skipping dataset: {dataset.name}")
+            continue
         for iteration in range(iterations):
             temp_threshold_df = pl.concat(
                 [
@@ -143,7 +151,8 @@ def main(
                         pl.lit(iteration).alias("iteration"),
                     )
                     for method in tqdm(methods)
-                ]
+                ],
+                how="vertical_relaxed",
             ).with_columns(
                 pl.lit(dataset.fairness_metric).alias("fairness_metric"),
                 pl.lit(dataset.name).alias("dataset"),
@@ -156,9 +165,10 @@ def main(
         .otherwise(pl.lit("Baseline"))
         .alias("method_type")
     )
-    domain_disc_names = {
+    new_names = {
         "domain_discriminative": "DomainDisc",
         "domain_independent": "DomainInd",
+        "erm_ensemble": "Ensemble (HPP)",
     }
 
     minimum_rate_filter = (
@@ -171,14 +181,15 @@ def main(
         pl.concat(all_thresholds)
         .filter(minimum_rate_filter)
         .with_columns(method_type_identifier)
+        .with_columns(pl.col("method").replace(new_names))
         .with_columns(pl.col("method").str.replace("_ensemble", ""))
-        .with_columns(pl.col("method").replace(domain_disc_names))
     )
 
     threshold_df = filter_ensemble_methods(threshold_df)
     threshold_df, fairret_removal = filter_fairret(threshold_df)
-
-    threshold_df
+    assert "Ensemble (HPP)" in threshold_df["method"].to_list(), (
+        "erm_ensemble missing from thresholds"
+    )
 
     cols = [
         "method",
@@ -215,6 +226,7 @@ def main(
                         .filter(
                             (pl.col("method_type") != "Baseline")
                             | (pl.col("method") == "oxonfair")
+                            | (pl.col("method") == "Ensemble (HPP)")
                         )
                         .filter(pl.col("threshold") > 0.0),
                         middle_predictions,
@@ -234,9 +246,12 @@ def main(
     plot_threshold_df = pl.concat(_plot_threshold_dfs).with_columns(
         pl.col("dataset").replace(NICE_DATASET_NAMES)
     )
+    assert "Ensemble (HPP)" in plot_threshold_df["method"].to_list(), (
+        "erm_ensemble missing from thresholds"
+    )
 
     logger.debug(f"Plotting methods: {plot_threshold_df[['method']].unique()}")
-    reversed_domain_disc = {v: k for k, v in domain_disc_names.items()}
+    reversed_domain_disc = {v: k for k, v in new_names.items()}
 
     averaged_threshold_df = (
         plot_threshold_df.group_by("method", "threshold", "dataset", "fairness_metric")
@@ -507,6 +522,10 @@ def get_thresholds(
         return _get_baseline_threshold(
             model_info=model_info, iteration=iteration, dataset_name=dataset
         ).with_columns(pl.lit(method_name).alias("method"), _val_rank)
+    if method_name == "erm_ensemble":
+        return _get_baseline_threshold(
+            model_info=model_info, iteration=iteration, dataset_name=dataset
+        ).with_columns(pl.lit(method_name).alias("method"), pl.lit(1).alias("val_rank"))
     if method_name == "fairret":
         combined_dfs = get_fairret_thresholds(dataset, iteration, model_info)
         return combined_dfs
@@ -682,6 +701,13 @@ if __name__ == "__main__":
         help="Name of the method to evaluate",
     )
     parser.add_argument(
+        "--datasets",
+        type=str,
+        nargs="+",
+        default=[data_info.name for data_info in DATASET_HPARAMS],
+        help="Datasets to evaluate",
+    )
+    parser.add_argument(
         "--num_threshold",
         type=int,
         default=100,
@@ -703,6 +729,7 @@ if __name__ == "__main__":
 
     main(
         methods=args.methods,
+        datasets=args.datasets,
         backbone=args.backbone,
         iterations=args.iterations,
     )
