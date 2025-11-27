@@ -64,7 +64,7 @@ def get_middle_predictions(
             )
             baseline_observed_path = (
                 (OUTPUT_DIR / "temp" / f"{baseline_path.stem}_observed_rates.csv")
-                if model_info.method != "erm_ensemble"
+                if model_info.method != "hpp_ensemble"
                 else baseline_path
             )
             if not baseline_observed_path.exists():
@@ -168,7 +168,7 @@ def main(
     new_names = {
         "domain_discriminative": "DomainDisc",
         "domain_independent": "DomainInd",
-        "erm_ensemble": "Ensemble (HPP)",
+        "hpp_ensemble": "Ensemble (HPP)",
     }
 
     minimum_rate_filter = (
@@ -188,7 +188,7 @@ def main(
     threshold_df = filter_ensemble_methods(threshold_df)
     threshold_df, fairret_removal = filter_fairret(threshold_df)
     assert "Ensemble (HPP)" in threshold_df["method"].to_list(), (
-        "erm_ensemble missing from thresholds"
+        "hpp_ensemble missing from thresholds"
     )
 
     cols = [
@@ -247,7 +247,7 @@ def main(
         pl.col("dataset").replace(NICE_DATASET_NAMES)
     )
     assert "Ensemble (HPP)" in plot_threshold_df["method"].to_list(), (
-        "erm_ensemble missing from thresholds"
+        "hpp_ensemble missing from thresholds"
     )
 
     logger.debug(f"Plotting methods: {plot_threshold_df[['method']].unique()}")
@@ -522,7 +522,7 @@ def get_thresholds(
         return _get_baseline_threshold(
             model_info=model_info, iteration=iteration, dataset_name=dataset
         ).with_columns(pl.lit(method_name).alias("method"), _val_rank)
-    if method_name == "erm_ensemble":
+    if method_name == "hpp_ensemble":
         return _get_baseline_threshold(
             model_info=model_info, iteration=iteration, dataset_name=dataset
         ).with_columns(pl.lit(method_name).alias("method"), pl.lit(1).alias("val_rank"))

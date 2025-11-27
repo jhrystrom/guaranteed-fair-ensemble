@@ -211,7 +211,7 @@ def plot_dataset(
         "improvement"
     ].mean()
 
-    sns.set_theme(style="whitegrid", font_scale=1.22)
+    sns.set_theme(style="whitegrid", font_scale=1.9)
     plot_df = (
         improvement_df.join(average_performance, on="method", how="inner")
         .sort("rank")
@@ -229,6 +229,8 @@ def plot_dataset(
         f"Plotting mean: {plot_df.group_by('method').agg(pl.col('improvement').mean())}"
     )
 
+    # Make figure wider
+    plt.figure(figsize=(12, 6))
     ax = sns.barplot(
         plot_df.with_columns(guaranteed_fair_ensemble.names.normalise_method_names),
         x="method",
@@ -237,6 +239,7 @@ def plot_dataset(
         errorbar=("ci", 99),
         palette=guaranteed_fair_ensemble.colors.get_method_type_colours(),
     )
+    # Rotate x labels 45 degrees
     # Annotate means using seaborn's containers (matplotlib backend)
     # Annotate outside bars, offset above error bar
     for container in ax.containers:
@@ -253,7 +256,7 @@ def plot_dataset(
                 f"{height + erm_improvement:.3f}",
                 ha="center",
                 va="bottom",
-                fontsize=11,
+                fontsize=15,
                 fontweight="bold",
                 color="black",  # always black since it's outside
             )
@@ -270,7 +273,7 @@ def plot_dataset(
     )
     ax.margins(y=0.1)  # adds 10% extra space above/below bars
     ax.set_ylabel(f"FairAUC ({fairness_metric.replace('_', ' ').title()})")
-    plt.xticks(rotation=90)
+    plt.xticks(rotation=45)
     plt.tight_layout()
     plt.savefig(
         PLOT_DIR
