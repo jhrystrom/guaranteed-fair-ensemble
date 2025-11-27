@@ -151,13 +151,13 @@ def get_fairensemble_file_path(
         method=method,
         split=split,
     )
-    logger.debug(f"FairEnsemble file path: {path.name}")
+    logger.debug(f"OxEnsemble  file path: {path.name}")
     return path
 
 
 normalise_method_names = (
     pl.when(pl.col("method").str.ends_with("multi"))
-    .then(pl.lit("FairEnsemble"))
+    .then(pl.lit("OxEnsemble"))
     .when(pl.col("method").str.contains("fairret"))
     .then(pl.lit("fairret"))
     .otherwise(pl.col("method"))

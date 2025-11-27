@@ -219,7 +219,7 @@ def plot_dataset(
         .with_columns(
             pl.when(pl.col("method_type") == "Baseline")
             .then(pl.lit("Baseline"))
-            .otherwise(pl.lit("FairEnsemble (ours)"))
+            .otherwise(pl.lit("OxEnsemble  (ours)"))
             .alias("MethodType"),
             (pl.col("improvement") - erm_improvement).alias("relative_improvement"),
         )
