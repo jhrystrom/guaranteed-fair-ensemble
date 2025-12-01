@@ -388,48 +388,48 @@ if __name__ == "__main__":
     plt.clf()
     sns.set_theme(style="whitegrid", font_scale=1.2)
 
-    # val_plot = sns.catplot(
-    #     data=combined_recall_competence_val,
-    #     x="minimum_rate",
-    #     kind="violin",
-    #     row="dataset",
-    #     y="error_rate",
-    #     height=6,
-    #     aspect=3,
-    #     hue="groups",
-    #     palette="Dark2",
-    # )
-    # val_plot.figure.supxlabel("Minimum Recall")
-    # val_plot.figure.supylabel("Error Rate for Positive Class")
-    # val_plot.set_axis_labels("", "")
-    # labels = [
-    #     f"{v:.2f}"
-    #     for v in sorted(combined_recall_competence_val["minimum_rate"].unique())
-    # ]
-    # val_plot.set_titles(row_template="{row_name}")
-    # for ax in val_plot.axes.flat:
-    #     ax.set_xticks(range(len(labels)))
-    #     ax.set_xticklabels(labels, rotation=0)
-    # # Move legend outside plot to the right
-    # plt.savefig(PLOT_DIR / "recall_competence_val_violin_plot.png", bbox_inches="tight")
-    # plt.clf()
+    val_plot = sns.catplot(
+        data=combined_recall_competence_val,
+        x="minimum_rate",
+        kind="violin",
+        row="dataset",
+        y="error_rate",
+        height=6,
+        aspect=3,
+        hue="groups",
+        palette="Dark2",
+    )
+    val_plot.figure.supxlabel("Minimum Recall")
+    val_plot.figure.supylabel("Error Rate for Positive Class")
+    val_plot.set_axis_labels("", "")
+    labels = [
+        f"{v:.2f}"
+        for v in sorted(combined_recall_competence_val["minimum_rate"].unique())
+    ]
+    val_plot.set_titles(row_template="{row_name}")
+    for ax in val_plot.axes.flat:
+        ax.set_xticks(range(len(labels)))
+        ax.set_xticklabels(labels, rotation=0)
+    # Move legend outside plot to the right
+    plt.savefig(PLOT_DIR / "recall_competence_val_violin_plot.png", bbox_inches="tight")
+    plt.clf()
 
-    # graph = sns.relplot(
-    #     data=add_binary_threshold(combined_plot_data),
-    #     x="t",
-    #     y="competence_diff",
-    #     col="group",
-    #     row="dataset",
-    #     hue="above_threshold",
-    #     # palette=sns.color_palette("coolwarm", as_cmap=True),
-    # )
-    # # Add hline at 0 for each subplot
-    # for ax in plt.gcf().axes:
-    #     ax.axhline(0, color="black", linestyle="--")
-    # graph.figure.supxlabel("T")
-    # graph.figure.supylabel("Competence Mass Difference (Good - Bad)")
-    # # Set axis labels to None
-    # graph.set_xlabels("")
-    # graph.set_ylabels("")
-    # plt.savefig(PLOT_DIR / "competence_mass_plot_by_group.png", bbox_inches="tight")
-    # plt.clf()
+    graph = sns.relplot(
+        data=add_binary_threshold(combined_plot_data),
+        x="t",
+        y="competence_diff",
+        col="group",
+        row="dataset",
+        hue="above_threshold",
+        # palette=sns.color_palette("coolwarm", as_cmap=True),
+    )
+    # Add hline at 0 for each subplot
+    for ax in plt.gcf().axes:
+        ax.axhline(0, color="black", linestyle="--")
+    graph.figure.supxlabel("T")
+    graph.figure.supylabel("Competence Mass Difference (Good - Bad)")
+    # Set axis labels to None
+    graph.set_xlabels("")
+    graph.set_ylabels("")
+    plt.savefig(PLOT_DIR / "competence_mass_plot_by_group.png", bbox_inches="tight")
+    plt.clf()

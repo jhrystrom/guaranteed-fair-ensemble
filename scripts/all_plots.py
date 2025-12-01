@@ -4,8 +4,7 @@ import subprocess
 plots = {
     "plot_vision_frontiers": ["--methods=all"],
     "plot_improvements": [],
-    # TODO: Competence plots
-    # TODO: NLP plots
+    "validate_competence": [],
 }
 
 for plot_file, args in plots.items():
