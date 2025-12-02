@@ -1,11 +1,9 @@
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import numpy as np
 import polars as pl
 import seaborn as sns
 import torch
 from loguru import logger
-from tqdm import tqdm
 
 import guaranteed_fair_ensemble.datasets
 import guaranteed_fair_ensemble.predict
@@ -14,10 +12,7 @@ from guaranteed_fair_ensemble.config import get_dataset_info
 from guaranteed_fair_ensemble.constants import DEFAULT_SEED
 from guaranteed_fair_ensemble.data.registry import get_dataset
 from guaranteed_fair_ensemble.data_models import ModelInfo, SplitType, TrainingInfo
-from guaranteed_fair_ensemble.directories import DATA_DIR, OUTPUT_DIR, PLOT_DIR
-
-# import importlib
-# importlib.reload(guaranteed_fair_ensemble.predict)
+from guaranteed_fair_ensemble.directories import DATA_DIR, PLOT_DIR
 
 
 def validate_competence(error_rates: np.ndarray, ts: np.ndarray | None = None) -> float:
