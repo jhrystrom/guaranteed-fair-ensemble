@@ -35,6 +35,3 @@ uv run scripts/all_plots.py
 ```
 
 This will populate the `plots/` directory with plots from the paper. Currently, only some parts are supported
-
-## NLP analysis (hate speech)
-For instructions to reproduce the hate speech analysis, see the [`nlp/`](./nlp/README.md) subfolder.
