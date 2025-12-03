@@ -263,7 +263,7 @@ def main(
 
     # --- Wide layout + simple font control via Seaborn ---------------------------
     N_COLS = 3  # always 3 datasets
-    TARGET_WIDTH_IN = 18.0  # make it wide for the paper
+    TARGET_WIDTH_IN = 21.0  # make it wide for the paper
     PANEL_HEIGHT_IN = 5.0  # facet height
     FONT_SCALE = 2.0  # <— tweak this single number
 
@@ -286,7 +286,7 @@ def main(
         height=height,
         aspect=aspect,
         palette=guaranteed_fair_ensemble.colors.get_method_colours(),
-        facet_kws={"sharey": True, "sharex": False},
+        facet_kws={"sharey": False, "sharex": False},
     )
 
     # X labels per dataset's fairness metric
@@ -697,7 +697,7 @@ if __name__ == "__main__":
         "--methods",
         type=str,
         nargs="+",
-        required=True,
+        default=["all"],
         help="Name of the method to evaluate",
     )
     parser.add_argument(
