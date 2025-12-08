@@ -176,6 +176,7 @@ def plot_dataset(
         "domain_discriminative": "DomainDisc",
         "domain_independent": "DomainInd",
         "hpp_ensemble": "Ensemble (HPP)",
+        "ensemble": "Ensemble (ERM)",
     }
 
     threshold_df: pl.DataFrame = (
@@ -211,7 +212,7 @@ def plot_dataset(
         "improvement"
     ].mean()
 
-    sns.set_theme(style="whitegrid", font_scale=1.9)
+    sns.set_theme(style="whitegrid", font_scale=2)
     plot_df = (
         improvement_df.join(average_performance, on="method", how="inner")
         .sort("rank")
@@ -256,7 +257,7 @@ def plot_dataset(
                 f"{height + erm_improvement:.3f}",
                 ha="center",
                 va="bottom",
-                fontsize=15,
+                fontsize=20,
                 fontweight="bold",
                 color="black",  # always black since it's outside
             )
