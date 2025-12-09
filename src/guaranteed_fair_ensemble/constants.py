@@ -28,6 +28,15 @@ ALL_METHODS = ["multiensemble", *ALL_BASELINES]
 FAIRRET_SCALES = [0.5, 0.75, 1.0, 1.25, 1.5]
 ITERATIONS = 3
 
+PRETTY_METHOD_NAMES = {
+    "domain_discriminative": "DomainDisc",
+    "domain_independent": "DomainInd",
+    "fairret": "fairret",
+    "erm": "ERM",
+    "ensemble": "Ensemble (ERM)",
+    "oxonfair": "OxonFair",
+    "hpp_ensemble": "Ensemble (HPP)",
+}
 
 if __name__ == "__main__":
     from dataclasses import asdict

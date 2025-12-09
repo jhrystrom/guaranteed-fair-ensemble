@@ -3,7 +3,6 @@
 import argparse
 from functools import cache
 from pathlib import Path
-from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,6 +22,7 @@ from guaranteed_fair_ensemble.constants import (
     ALL_METHODS,
     DATASET_HPARAMS,
     FAIRRET_SCALES,
+    PRETTY_METHOD_NAMES,
     SIMPLE_BASELINES,
 )
 from guaranteed_fair_ensemble.data.registry import get_dataset
@@ -165,11 +165,6 @@ def main(
         .otherwise(pl.lit("Baseline"))
         .alias("method_type")
     )
-    new_names = {
-        "domain_discriminative": "DomainDisc",
-        "domain_independent": "DomainInd",
-        "hpp_ensemble": "Ensemble (HPP)",
-    }
 
     minimum_rate_filter = (
         pl.when(pl.col("fairness_metric") == "min_recall")
@@ -181,7 +176,7 @@ def main(
         pl.concat(all_thresholds)
         .filter(minimum_rate_filter)
         .with_columns(method_type_identifier)
-        .with_columns(pl.col("method").replace(new_names))
+        .with_columns(pl.col("method").replace(PRETTY_METHOD_NAMES))
         .with_columns(pl.col("method").str.replace("_ensemble", ""))
     )
 
@@ -251,13 +246,14 @@ def main(
     )
 
     logger.debug(f"Plotting methods: {plot_threshold_df[['method']].unique()}")
-    reversed_domain_disc = {v: k for k, v in new_names.items()}
+    reversed_domain_disc = {v: k for k, v in PRETTY_METHOD_NAMES.items()}
 
     averaged_threshold_df = (
         plot_threshold_df.group_by("method", "threshold", "dataset", "fairness_metric")
         .mean()
         .with_columns(guaranteed_fair_ensemble.names.normalise_method_names)
         .with_columns(pl.col("method").replace(reversed_domain_disc))
+        .with_columns(pl.col("method").replace(PRETTY_METHOD_NAMES))
     )
     logger.debug(f"{averaged_threshold_df['method'].unique().to_list()}")
 

@@ -23,6 +23,7 @@ from guaranteed_fair_ensemble.constants import (
     ALL_METHODS,
     DATASET_HPARAMS,
     FAIRRET_SCALES,
+    PRETTY_METHOD_NAMES,
     SIMPLE_BASELINES,
 )
 from guaranteed_fair_ensemble.data.registry import get_dataset
@@ -172,17 +173,11 @@ def plot_dataset(
         .otherwise(pl.lit("Baseline"))
         .alias("method_type")
     )
-    new_names = {
-        "domain_discriminative": "DomainDisc",
-        "domain_independent": "DomainInd",
-        "hpp_ensemble": "Ensemble (HPP)",
-        "ensemble": "Ensemble (ERM)",
-    }
 
     threshold_df: pl.DataFrame = (
         pl.concat(all_thresholds)
         .filter(pl.col("threshold") > metric_minimum)
-        .with_columns(pl.col("method").replace(new_names))
+        .with_columns(pl.col("method").replace(PRETTY_METHOD_NAMES))
         .with_columns(method_type_identifier)
         .with_columns(pl.col("method").str.replace("_ensemble", ""))
     )
@@ -208,9 +203,10 @@ def plot_dataset(
         generate_filter(average_performance) if filter_best else pl.lit(True)
     )
 
-    erm_improvement = improvement_df.filter(pl.col("method") == "erm")[
+    erm_improvement = improvement_df.filter(pl.col("method") == "ERM")[
         "improvement"
     ].mean()
+    assert erm_improvement is not None, "ERM improvement should not be None"
 
     sns.set_theme(style="whitegrid", font_scale=2)
     plot_df = (
