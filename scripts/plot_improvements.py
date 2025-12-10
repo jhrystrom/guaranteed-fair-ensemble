@@ -270,7 +270,21 @@ def plot_dataset(
     )
     ax.margins(y=0.1)  # adds 10% extra space above/below bars
     ax.set_ylabel(f"FairAUC ({fairness_metric.replace('_', ' ').title()})")
-    plt.xticks(rotation=45)
+    # Re-enable + style the tick marks
+    ax.tick_params(
+        axis="x",
+        which="both",
+        bottom=True,  # show bottom ticks
+        top=False,  # hide top ticks
+        length=6,  # visible tick
+        width=1.2,
+        direction="out",
+    )
+
+    # Rotate & right-align label text
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+    ax.tick_params(axis="x", length=8, width=1.5, direction="out")  # add ticks
+
     plt.tight_layout()
     plt.savefig(
         PLOT_DIR
