@@ -140,16 +140,17 @@ def get_fairensemble_file_path(
     fairness_metric: FairnessMetric,
     method: FairMethod,
     split: SplitType,
+    backbone: str = "efficientnet_s",
 ) -> Path:
-    FILE_PATTERN = (
-        "{dataset}-iteration{iteration}-{fairness_metric}-{method}-ensemble-{split}.csv"
-    )
+    backbone_suffix = "" if backbone == "efficientnet_s" else f"_{backbone}"
+    FILE_PATTERN = "{dataset}-iteration{iteration}-{fairness_metric}-{method}-ensemble-{split}{backbone}.csv"
     path = OUTPUT_DIR / FILE_PATTERN.format(
         dataset=dataset_name,
         iteration=iteration,
         fairness_metric=fairness_metric,
         method=method,
         split=split,
+        backbone=backbone_suffix,
     )
     logger.debug(f"OxEnsemble  file path: {path.name}")
     return path

@@ -529,11 +529,12 @@ def main(
     min_iteration: int = 0,
     max_iterations: int = 3,
     overwrite: bool = False,
+    backbone: str = "efficientnet_s",
 ) -> None:
     # Get dataset and so on
     dataset_info = get_dataset_info(dataset)
     logger.debug(f"Dataset info: {dataset_info}")
-    model_info = ModelInfo(method="ensemble", backbone="efficientnet_s")
+    model_info = ModelInfo(method="ensemble", backbone=backbone)
     training_info = TrainingInfo(dataset=dataset_info, model=model_info)
     spec = get_dataset(dataset)
     full_df = spec.load_and_clean_data(DATA_DIR)
@@ -581,10 +582,18 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to overwrite existing output files",
     )
+    parser.add_argument(
+        "--backbone",
+        type=str,
+        default="efficientnet_s",
+        help="Backbone model name",
+        choices=["efficientnet_s", "mobilenetv3"],
+    )
     args = parser.parse_args()
     main(
         dataset=args.dataset,
         min_iteration=args.min_iteration,
         max_iterations=args.max_iteration,
         overwrite=args.overwrite,
+        backbone=args.backbone,
     )
