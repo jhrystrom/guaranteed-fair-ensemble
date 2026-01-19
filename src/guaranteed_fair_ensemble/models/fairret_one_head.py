@@ -26,13 +26,29 @@ class OneHeadFairretModel(nn.Module):
         if hasattr(backbone, "fc"):
             in_features = backbone.fc.in_features
             backbone.fc = nn.Identity()
+
         elif hasattr(backbone, "classifier"):
             cls_layer = backbone.classifier
+
             if isinstance(cls_layer, nn.Sequential):
-                in_features = cls_layer[-1].in_features
+                # ✅ Use the *first* Linear's in_features (e.g. MobileNetV3: 576)
+                first_linear = next(
+                    (m for m in cls_layer if isinstance(m, nn.Linear)), None
+                )
+                if first_linear is None:
+                    raise ValueError(
+                        "Backbone classifier Sequential has no Linear layer to infer in_features."
+                    )
+                in_features = first_linear.in_features
             else:
+                if not isinstance(cls_layer, nn.Linear):
+                    raise ValueError(
+                        "Unsupported classifier layer type; expected Linear or Sequential containing Linear."
+                    )
                 in_features = cls_layer.in_features
+
             backbone.classifier = nn.Identity()
+
         else:
             raise ValueError(
                 "Unsupported backbone architecture - cannot locate final fully connected layer."

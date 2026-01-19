@@ -412,19 +412,20 @@ def run_for_iteration(
         val_results,
         fairness_constraint=fairness_constraint,
         overwrite=overwrite,
+        backbone=training_info.model.backbone,
     )
 
-    fit_joint_model_with_constraints(
-        iteration,
-        dataset_info,
-        device,
-        model,
-        validation_data,
-        test_data,
-        val_results,
-        fairness_constraint=fairness_constraint,
-        overwrite=overwrite,
-    )
+    # fit_joint_model_with_constraints(
+    #     iteration,
+    #     dataset_info,
+    #     device,
+    #     model,
+    #     validation_data,
+    #     test_data,
+    #     val_results,
+    #     fairness_constraint=fairness_constraint,
+    #     overwrite=overwrite,
+    # )
 
 
 def fit_predict_multi_threshold(
@@ -437,12 +438,14 @@ def fit_predict_multi_threshold(
     val_results,
     fairness_constraint: FairnessConstraint,
     overwrite: bool = False,
+    backbone: str = "efficientnet_s",
 ):
     get_file_path = functools.partial(
         guaranteed_fair_ensemble.names.get_fairensemble_file_path,
         dataset_name=dataset_info.name,
         fairness_metric=dataset_info.fairness_metric,
         iteration=iteration,
+        backbone=backbone,
     )
     constraint_thresholds = fairness_constraint.thresholds
     test_file_path = get_file_path(split="test", method="multi")
