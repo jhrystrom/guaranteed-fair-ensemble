@@ -32,7 +32,7 @@ def get_backbone(name: str, num_heads: int = 4, freeze: bool = True) -> nn.Modul
         if freeze:
             for param in model.parameters():
                 param.requires_grad = False
-        model.classifier[3] = nn.Linear(1024, num_heads)
+        model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, num_heads)
 
     elif name == "efficientnet":
         model = models.efficientnet_v2_m(weights=WEIGHTS_DICT["efficientnet"])
@@ -143,7 +143,6 @@ def initialize_model_checkpoint(
     num_domains = num_heads - 1
     if model_info.method == "erm_ensemble":
         from guaranteed_fair_ensemble.lit_model import LitMultiHead
-
 
         return LitMultiHead.load_from_checkpoint(
             checkpoint_path, model=model, num_heads=num_heads
