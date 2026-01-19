@@ -32,7 +32,7 @@ def get_backbone(name: str, num_heads: int = 4, freeze: bool = True) -> nn.Modul
         if freeze:
             for param in model.parameters():
                 param.requires_grad = False
-        model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, num_heads)
+        model.classifier[-1] = nn.Linear(model.classifier[0].in_features, num_heads)
 
     elif name == "efficientnet":
         model = models.efficientnet_v2_m(weights=WEIGHTS_DICT["efficientnet"])
