@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import guaranteed_fair_ensemble.backbone
+
 
 class DomainIndependentModel(nn.Module):
     """
@@ -23,28 +25,11 @@ class DomainIndependentModel(nn.Module):
         self.num_domains = num_domains
         self.num_classes = num_classes
 
-        # Determine the output size of the backbone
-        if hasattr(self.backbone, "fc"):
-            # ResNet style model
-            feature_dim = self.backbone.fc.in_features
-            self._is_resnet = True
-            # Replace the fully connected layer with identity
-            self.backbone.fc = nn.Identity()
-        elif hasattr(self.backbone, "classifier"):
-            # MobileNet style model
-            if isinstance(self.backbone.classifier, nn.Sequential):
-                # Get input features from the last layer of the classifier
-                feature_dim = self.backbone.classifier[-1].in_features
-                self._is_resnet = False
-            else:
-                feature_dim = self.backbone.classifier.in_features
-                self._is_resnet = False
-            self.backbone.classifier = nn.Identity()
-        else:
-            raise ValueError("Unsupported backbone architecture")
-
         # Create separate classifiers for each domain
         total_classes = num_domains * num_classes
+        feature_dim = guaranteed_fair_ensemble.backbone.strip_backbone_classifier(
+            backbone
+        )
         self.classifier = nn.Linear(feature_dim, total_classes)
 
     def extract_features(self, x):

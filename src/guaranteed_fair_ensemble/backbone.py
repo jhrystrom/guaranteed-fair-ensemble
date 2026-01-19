@@ -193,6 +193,57 @@ def initialize_model_checkpoint(
     raise ValueError(f"Unknown training method: {model_info.method}")
 
 
+def strip_backbone_classifier(backbone: nn.Module) -> int:
+    """
+    Infer the backbone output feature dimension and replace the backbone's
+    classification head with nn.Identity().
+
+    Supports:
+      - ResNet-like: backbone.fc (nn.Linear)
+      - MobileNet/EfficientNet-like: backbone.classifier (nn.Sequential or nn.Linear)
+    """
+    # ResNet-like
+    if hasattr(backbone, "fc") and isinstance(getattr(backbone, "fc"), nn.Module):
+        fc = backbone.fc
+        if not isinstance(fc, nn.Linear):
+            raise ValueError("Unsupported backbone.fc type; expected nn.Linear.")
+        in_features = fc.in_features
+        backbone.fc = nn.Identity()
+        return in_features
+
+    # MobileNet/EfficientNet-like
+    if hasattr(backbone, "classifier") and isinstance(
+        getattr(backbone, "classifier"), nn.Module
+    ):
+        cls_layer = backbone.classifier
+
+        if isinstance(cls_layer, nn.Sequential):
+            # Use the *first* Linear (e.g. MobileNetV3: 576 -> 1024 -> num_classes)
+            first_linear = next(
+                (m for m in cls_layer if isinstance(m, nn.Linear)), None
+            )
+            if first_linear is None:
+                raise ValueError(
+                    "Backbone classifier Sequential has no nn.Linear layer to infer in_features."
+                )
+            in_features = first_linear.in_features
+            backbone.classifier = nn.Identity()
+            return in_features
+
+        if isinstance(cls_layer, nn.Linear):
+            in_features = cls_layer.in_features
+            backbone.classifier = nn.Identity()
+            return in_features
+
+        raise ValueError(
+            "Unsupported backbone.classifier type; expected nn.Linear or nn.Sequential."
+        )
+
+    raise ValueError(
+        "Unsupported backbone architecture - cannot locate final fully connected layer."
+    )
+
+
 if __name__ == "__main__":
     mobilenet = get_backbone("mobilenetv3", num_heads=4, freeze=True)
     efficientnet = get_backbone("efficientnet", num_heads=4, freeze=True)

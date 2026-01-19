@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+import guaranteed_fair_ensemble.backbone
+
 
 class DomainDiscriminativeModel(nn.Module):
     """A backbone + *K* domain-specific linear heads.
@@ -25,29 +27,8 @@ class DomainDiscriminativeModel(nn.Module):
         self.backbone = backbone
         self.num_domains = num_domains
         self.num_classes = num_classes
-
-        # Determine backbone feature dimension
-        if hasattr(backbone, "fc"):
-            # ResNet-style network
-            feat_dim = backbone.fc.in_features  # type: ignore[attr-defined]
-            backbone.fc = nn.Identity()  # type: ignore[attr-defined]
-        elif hasattr(backbone, "classifier"):
-            cls_layer = backbone.classifier  # type: ignore[attr-defined]
-            if isinstance(cls_layer, nn.Sequential):
-                feat_dim = cls_layer[-1].in_features  # type: ignore[index]
-            else:
-                feat_dim = cls_layer.in_features  # type: ignore[attr-defined]
-            backbone.classifier = nn.Identity()  # type: ignore[attr-defined]
-        else:
-            raise ValueError(
-                "Unsupported backbone architecture - cannot locate final FC layer."
-            )
-
-        # Domain-specific classifier (single linear layer)
-        if not hasattr(self, "classifier"):
-            self.classifier = nn.Linear(feat_dim, num_domains * num_classes)
-        else:
-            self.classifier[-1] = nn.Linear(feat_dim, num_domains * num_classes)
+        feat_dim = guaranteed_fair_ensemble.backbone.strip_backbone_classifier(backbone)
+        self.classifier = nn.Linear(feat_dim, num_domains * num_classes)
 
     # forward / predict
     def extract_features(self, x: torch.Tensor) -> torch.Tensor:

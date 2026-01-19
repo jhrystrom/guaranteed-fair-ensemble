@@ -21,41 +21,41 @@ from guaranteed_fair_ensemble.constants import DATASET_HPARAMS
 
 
 MODEL_SPECS: Final[list[dict[str, Any]]] = [
-    # {
-    #     "training_method": "erm_ensemble",
-    # },
-    # {
-    #     "training_method": "erm",
-    # },
-    # {
-    #     "training_method": "ensemble",
-    # },
-    # {
-    #     "training_method": "domain_independent",
-    # },
-    # {
-    #     "training_method": "domain_discriminative",
-    # },
-    # {
-    #     "training_method": "fairret",
-    #     "scaling_factor": 0.5,
-    # },
+    {
+        "training_method": "erm_ensemble",
+    },
+    {
+        "training_method": "erm",
+    },
+    {
+        "training_method": "ensemble",
+    },
+    {
+        "training_method": "domain_independent",
+    },
+    {
+        "training_method": "domain_discriminative",
+    },
+    {
+        "training_method": "fairret",
+        "scaling_factor": 0.5,
+    },
     {
         "training_method": "fairret",
         "scaling_factor": 0.75,
     },
-    # {
-    #     "training_method": "fairret",
-    #     "scaling_factor": 1.0,
-    # },
-    # {
-    #     "training_method": "fairret",
-    #     "scaling_factor": 1.25,
-    # },
-    # {
-    #     "training_method": "fairret",
-    #     "scaling_factor": 1.5,
-    # },
+    {
+        "training_method": "fairret",
+        "scaling_factor": 1.0,
+    },
+    {
+        "training_method": "fairret",
+        "scaling_factor": 1.25,
+    },
+    {
+        "training_method": "fairret",
+        "scaling_factor": 1.5,
+    },
 ]
 
 ITERATIONS = [1, 3]
