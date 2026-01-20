@@ -160,5 +160,8 @@ def concat_subheads(subheads: list[nn.Module]) -> nn.Module:
     # If there is no prefix, return a Linear; otherwise return Sequential(prefix + combined_last)
     if len(base_prefix) == 0:
         return combined_last
+    combined = nn.Sequential(*base_prefix, combined_last)
 
-    return nn.Sequential(*base_prefix, combined_last)
+    combined.out_features = combined_last.out_features  # ty:ignore[unresolved-attribute]
+
+    return combined

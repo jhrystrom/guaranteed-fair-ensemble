@@ -1,0 +1,2 @@
+min_recall,equal_opportunity,accuracy,dataset,iteration,method
+0.7457627118644068,0.05157769322418234,0.7788317523714429,ham10000,1,ensemble
