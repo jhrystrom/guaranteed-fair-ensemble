@@ -35,6 +35,11 @@ from guaranteed_fair_ensemble.models.fairensemble_lit import (
     predict_from_features,
 )
 from guaranteed_fair_ensemble.predict import predict_across_thresholds, vote_majority
+from guaranteed_fair_ensemble.subheads import (
+    concat_subheads,
+    extract_subhead,
+    replace_last_linear,
+)
 
 MAX_MEMBERS = 21
 ENSEMBLE_SIZES = list(range(3, MAX_MEMBERS + 1, 2))
@@ -106,11 +111,15 @@ def get_multi_heads_with_constraints(
                 recompute=False,
             )
             # extract the head
-            subhead = extract_subhead(model, member_idx=member_results.classifier_idx)
-            merged_head = fpred.merge_heads_pytorch(subhead.to("cpu"))
-            multi_merged_heads[constraint].append(merged_head)
+            subhead, last_linear = extract_subhead(
+                model, member_idx=member_results.classifier_idx
+            )
+            merged_head = fpred.merge_heads_pytorch(last_linear.to("cpu"))
+            merged_subhead = replace_last_linear(subhead.to("cpu"), merged_head)
+            multi_merged_heads[constraint].append(merged_subhead)
+
     combined_heads = {
-        constraint: concat_linears(heads)
+        constraint: concat_subheads(heads)
         for constraint, heads in multi_merged_heads.items()
     }
     return combined_heads
@@ -148,11 +157,13 @@ def fit_joint_ensemble_constraints(
         )
         # Apply to all ensemble members
         for classifier_idx in range(ensemble_size):
-            subhead = extract_subhead(model, member_idx=classifier_idx)
-            merged_head = joint_fpred.merge_heads_pytorch(subhead.to("cpu"))
-            joint_heads[constraint].append(merged_head)
+            subhead, last_linear = extract_subhead(model, member_idx=classifier_idx)
+
+            merged_last = joint_fpred.merge_heads_pytorch(last_linear.to("cpu"))
+            merged_subhead = replace_last_linear(subhead.to("cpu"), merged_last)
+            joint_heads[constraint].append(merged_subhead)
     joint_merged_heads = {
-        constraint: concat_linears(heads) for constraint, heads in joint_heads.items()
+        constraint: concat_subheads(heads) for constraint, heads in joint_heads.items()
     }
     return joint_merged_heads
 
@@ -172,27 +183,27 @@ def evaluate_thresholded_predictions(
     return pl.DataFrame(joint_metrics)
 
 
-def concat_linears(layers: list[nn.Linear]) -> nn.Linear:
-    """
-    Concatenate multiple nn.Linear layers (same in_features, out_features=1)
-    into a single nn.Linear with out_features = len(layers).
-    """
-    if not layers:
-        raise ValueError("layers must be non-empty")
+# def concat_subheads(layers: list[nn.Linear]) -> nn.Linear:
+#     """
+#     Concatenate multiple nn.Linear layers (same in_features, out_features=1)
+#     into a single nn.Linear with out_features = len(layers).
+#     """
+#     if not layers:
+#         raise ValueError("layers must be non-empty")
 
-    in_features = layers[0].in_features
-    use_bias = layers[0].bias is not None
+#     in_features = layers[0].in_features
+#     use_bias = layers[0].bias is not None
 
-    # stack weights and biases
-    weight = torch.cat([layer.weight.data for layer in layers], dim=0)
-    bias = torch.cat([layer.bias.data for layer in layers], dim=0) if use_bias else None
+#     # stack weights and biases
+#     weight = torch.cat([layer.weight.data for layer in layers], dim=0)
+#     bias = torch.cat([layer.bias.data for layer in layers], dim=0) if use_bias else None
 
-    combined = nn.Linear(in_features, len(layers), bias=use_bias)
-    combined.weight.data = weight
-    if use_bias:
-        combined.bias.data = bias  # type: ignore
+#     combined = nn.Linear(in_features, len(layers), bias=use_bias)
+#     combined.weight.data = weight
+#     if use_bias:
+#         combined.bias.data = bias  # type: ignore
 
-    return combined
+#     return combined
 
 
 def calculate_metrics(
@@ -206,22 +217,6 @@ def calculate_metrics(
         "equal_opportunity": EQUAL_OPPORTUNITY(test_labels, predictions, test_groups),
         "accuracy": ACCURACY(test_labels, predictions, test_groups),
     }
-
-
-def extract_subhead(fair_ensemble: FairEnsemble, member_idx: int):
-    classifier = fair_ensemble.classifiers[-1]
-    in_features = classifier.in_features
-    out_features = int(classifier.out_features) // fair_ensemble.num_classifiers
-    subhead = nn.Linear(in_features, out_features)
-    # Copy the weights and bias from the original classifier's final layer
-    # But only for this fold's heads
-    start_idx = member_idx * out_features
-    stop_idx = start_idx + out_features
-    # Copy weights for just this fold's heads
-    subhead.weight.data = classifier.weight.data[start_idx:stop_idx, :]
-    if classifier.bias is not None:
-        subhead.bias.data = classifier.bias.data[start_idx:stop_idx]
-    return subhead
 
 
 def evaluate_metrics_fairness(
