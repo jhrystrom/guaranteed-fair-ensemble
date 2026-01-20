@@ -506,14 +506,14 @@ def fit_predict_multi_threshold(
 
     # Now on to single member predictions
     oxonfair_val_metrics = evaluate_thresholded_predictions(
-        threshold_predictions=multi_val_predictions[:, 1:2, :],
+        threshold_predictions=multi_val_predictions[:, 0:1, :],
         constraints=constraint_thresholds,
         dataset=validation_data,
     ).with_columns(
         pl.lit("oxonfair").alias("method"),
     )
     oxonfair_test_metrics = evaluate_thresholded_predictions(
-        threshold_predictions=multi_test_predictions[:, 1:2, :],
+        threshold_predictions=multi_test_predictions[:, 0:1, :],
         constraints=constraint_thresholds,
         dataset=test_data,
     ).with_columns(
