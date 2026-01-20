@@ -311,6 +311,11 @@ def main(batch_size, backbone, overwrite, num_iterations):
     for dataset_params in tqdm(DATASET_HPARAMS, desc="Datasets"):
         img_dict = None
         for baseline_info in tqdm(baseline_model_infos, desc="Baselines", leave=False):
+            if baseline_info.method != "hpp_ensemble":
+                logger.info(
+                    f"Constructing validation frontier for {dataset_params.name} - {baseline_info.method}"
+                )
+                continue
             training_info = get_training_info(dataset_params, model_info=baseline_info)
             for iteration in tqdm(
                 range(num_iterations), desc="Iterations", leave=False
@@ -369,7 +374,7 @@ def main(batch_size, backbone, overwrite, num_iterations):
 if __name__ == "__main__":
     BATCH_SIZE = 1024
     BACKBONE = "mobilenetv3"
-    OVERWRITE = True
+    OVERWRITE = False
     NUM_ITERATIONS = 3
 
     main(

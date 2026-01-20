@@ -46,6 +46,7 @@ def get_all_model_infos(backbone: str) -> list[ModelInfo]:
             )
         )
     model_infos.append(ModelInfo(method="ensemble", backbone=backbone))
+    model_infos.append(ModelInfo(method="hpp_ensemble", backbone=backbone))
     return model_infos
 
 
