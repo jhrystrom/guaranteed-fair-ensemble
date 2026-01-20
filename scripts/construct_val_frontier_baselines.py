@@ -311,9 +311,6 @@ def main(batch_size, backbone, overwrite, num_iterations):
     for dataset_params in tqdm(DATASET_HPARAMS, desc="Datasets"):
         img_dict = None
         for baseline_info in tqdm(baseline_model_infos, desc="Baselines", leave=False):
-            if baseline_info.method != "ensemble":
-                logger.warning(f"Skipping for {baseline_info.method} now!")
-                continue
             training_info = get_training_info(dataset_params, model_info=baseline_info)
             for iteration in tqdm(
                 range(num_iterations), desc="Iterations", leave=False
