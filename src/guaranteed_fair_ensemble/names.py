@@ -126,7 +126,9 @@ def get_model_path(info: TrainingInfo, iteration: int = 0) -> Path:
         / info.dataset.name
         / get_method_name_raw(model_info=info.model, val_size=info.val_size)
     )
-    if iteration > 0 or info.model.method == "ensemble":
+    if iteration > 0 or (
+        info.model.method == "ensemble" and info.model.backbone != "mobilenetv3"
+    ):
         model_dir /= f"iteration{iteration}"
     try:
         return next(model_dir.glob("*.ckpt"))

@@ -468,7 +468,8 @@ def fit_predict_multi_threshold(
     )
     # Save combined heads
     combined_heads_path = (
-        DATA_DIR / f"{dataset_info.name}-iteration{iteration}-multi-fitted-heads.pth"
+        DATA_DIR
+        / f"{dataset_info.name}-iteration{iteration}-multi-fitted-heads-{backbone}.pth"
     )
     torch.save(combined_heads, combined_heads_path)
     multi_val_predictions = predict_across_thresholds(
@@ -527,7 +528,7 @@ def fit_predict_multi_threshold(
     oxonfair_test_metrics.write_csv(oxonfair_test_path)
 
 
-def main(
+def process_dataset(
     dataset: str = "ham10000",
     min_iteration: int = 0,
     max_iterations: int = 3,
@@ -557,15 +558,34 @@ def main(
         )
 
 
+def main(
+    datasets: list[str],
+    min_iteration: int = 0,
+    max_iterations: int = 3,
+    overwrite: bool = False,
+    backbone: str = "efficientnet_s",
+):
+    for dataset in datasets:
+        logger.info(f"Processing dataset: {dataset}")
+        process_dataset(
+            dataset=dataset,
+            min_iteration=min_iteration,
+            max_iterations=max_iterations,
+            overwrite=overwrite,
+            backbone=backbone,
+        )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run fit_fair_frontiers with specified iterations",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--dataset",
+        "--datasets",
         type=str,
-        default="ham10000",
+        nargs="+",
+        default=["ham10000", "fitzpatrick17k", "fairvlmed"],
         help="Dataset name (must be registered in dataset registry)",
     )
     parser.add_argument(
@@ -594,7 +614,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     main(
-        dataset=args.dataset,
+        datasets=args.datasets,
         min_iteration=args.min_iteration,
         max_iterations=args.max_iteration,
         overwrite=args.overwrite,
