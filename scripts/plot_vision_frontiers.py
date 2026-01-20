@@ -56,6 +56,8 @@ def get_middle_predictions(
     middle_predictions = []
     for iteration in range(num_iteration):
         for model_info in all_infos:
+            if model_info.method == "hpp_ensemble":
+                continue
             baseline_path = guaranteed_fair_ensemble.names.create_baseline_save_path(
                 iteration=iteration,
                 model_info=model_info,
@@ -129,6 +131,8 @@ def main(
     sns.set_theme(style="whitegrid", font_scale=1.25)
     if "all" in methods:
         methods = ALL_METHODS
+        # Remove hpp ensemble from methods for now
+        methods = [m for m in methods if m != "hpp_ensemble"]
     if "all" in datasets:
         datasets = [data_info.name for data_info in DATASET_HPARAMS]
     # Load the predictions
@@ -182,9 +186,6 @@ def main(
 
     threshold_df = filter_ensemble_methods(threshold_df)
     threshold_df, fairret_removal = filter_fairret(threshold_df)
-    assert "Ensemble (HPP)" in threshold_df["method"].to_list(), (
-        "hpp_ensemble missing from thresholds"
-    )
 
     cols = [
         "method",
@@ -240,9 +241,6 @@ def main(
 
     plot_threshold_df = pl.concat(_plot_threshold_dfs).with_columns(
         pl.col("dataset").replace(NICE_DATASET_NAMES)
-    )
-    assert "Ensemble (HPP)" in plot_threshold_df["method"].to_list(), (
-        "hpp_ensemble missing from thresholds"
     )
 
     logger.debug(f"Plotting methods: {plot_threshold_df[['method']].unique()}")
