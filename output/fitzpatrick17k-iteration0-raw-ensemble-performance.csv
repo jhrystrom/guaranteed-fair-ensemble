@@ -1,0 +1,2 @@
+min_recall,equal_opportunity,accuracy,dataset,iteration,method
+0.5641025641025641,0.057264957264957284,0.8225119077463023,fitzpatrick17k,0,ensemble

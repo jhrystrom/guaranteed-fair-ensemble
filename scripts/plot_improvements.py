@@ -507,8 +507,6 @@ def get_thresholds(
 def get_fairensemble_thresholds(
     data_info: DatasetInfo, iteration: int = 0, backbone: str = "efficientnet_s"
 ) -> pl.DataFrame:
-    if backbone != "efficientnet_s":
-        raise ValueError("Backbone must be efficientnet_s for multiensemble")
     methods = ["multi"]
     validation_dfs = [
         pl.read_csv(
@@ -518,6 +516,7 @@ def get_fairensemble_thresholds(
                 iteration=iteration,
                 split="val",
                 fairness_metric=data_info.fairness_metric,
+                backbone=backbone,
             )
         ).with_columns(pl.lit(method).alias("method"))
         for method in methods
@@ -561,6 +560,7 @@ def get_fairensemble_thresholds(
                 iteration=iteration,
                 split="test",
                 fairness_metric=data_info.fairness_metric,
+                backbone=backbone,
             )
         ).with_columns(pl.lit(method).alias("method"))
         for method in methods

@@ -121,19 +121,26 @@ def get_fairret_name(model_info: ModelInfo, method_name):
 
 
 def get_model_path(info: TrainingInfo, iteration: int = 0) -> Path:
-    model_dir = (
+    base_dir = (
         CHECKPOINT_DIR
         / info.dataset.name
         / get_method_name_raw(model_info=info.model, val_size=info.val_size)
     )
-    if iteration > 0 or (
-        info.model.method == "ensemble" and info.model.backbone != "mobilenetv3"
-    ):
-        model_dir /= f"iteration{iteration}"
-    try:
-        return next(model_dir.glob("*.ckpt"))
-    except StopIteration:
-        raise FileNotFoundError(f"No checkpoint found in directory: {model_dir}")
+
+    model_dir = base_dir
+    if iteration > 0:
+        model_dir = base_dir / f"iteration{iteration}"
+
+    # look both without subdir and in iteration0
+    for d in (model_dir, base_dir / "iteration0"):
+        try:
+            return next(d.glob("*.ckpt"))
+        except StopIteration:
+            pass
+
+    raise FileNotFoundError(
+        f"No checkpoint found in {model_dir} or {base_dir / 'iteration0'}"
+    )
 
 
 def get_fairensemble_file_path(
