@@ -63,6 +63,12 @@ def run_domain_independent_lit(
 
 CASES = [
     pytest.param(
+        "mobilenetv3_large",
+        run_fairensemble_forward,
+        8,
+        id="mobilenetv3_large-fairensemble-forward",
+    ),
+    pytest.param(
         "efficientnet_s",
         run_fairensemble_forward,
         8,

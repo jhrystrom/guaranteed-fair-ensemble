@@ -84,6 +84,7 @@ def parse_args() -> argparse.Namespace:
         default="mobilenetv3",
         choices=[
             "mobilenetv3",
+            "mobilenetv3_large",
             "resnet18",
             "resnet50",
             "efficientnet",

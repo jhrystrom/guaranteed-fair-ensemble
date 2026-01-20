@@ -9,10 +9,9 @@ from guaranteed_fair_ensemble.data_models import ModelInfo
 
 WEIGHTS_DICT = {
     "mobilenetv3": models.MobileNet_V3_Small_Weights.IMAGENET1K_V1,
+    "mobilenetv3_large": models.MobileNet_V3_Large_Weights.IMAGENET1K_V1,
     "efficientnet": models.EfficientNet_V2_M_Weights.IMAGENET1K_V1,
     "efficientnet_s": models.EfficientNet_V2_S_Weights.IMAGENET1K_V1,
-    "resnet18": models.ResNet18_Weights.DEFAULT,
-    "resnet50": models.ResNet50_Weights.DEFAULT,
 }
 
 
@@ -35,6 +34,13 @@ def get_backbone(name: str, num_heads: int = 4, freeze: bool = True) -> nn.Modul
                 param.requires_grad = False
         model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, num_heads)
 
+    elif name == "mobilenetv3_large":
+        model = models.mobilenet_v3_large(weights=WEIGHTS_DICT["mobilenetv3_large"])
+        if freeze:
+            for param in model.parameters():
+                param.requires_grad = False
+        model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, num_heads)
+
     elif name == "efficientnet":
         model = models.efficientnet_v2_m(weights=WEIGHTS_DICT["efficientnet"])
         if freeze:
@@ -48,20 +54,6 @@ def get_backbone(name: str, num_heads: int = 4, freeze: bool = True) -> nn.Modul
             for param in model.parameters():
                 param.requires_grad = False
         model.classifier[-1] = nn.Linear(model.classifier[1].in_features, num_heads)
-
-    elif name == "resnet18":
-        model = models.resnet18(weights=WEIGHTS_DICT["resnet18"])
-        if freeze:
-            for param in model.parameters():
-                param.requires_grad = False
-        model.fc = nn.Linear(model.fc.in_features, num_heads)
-
-    elif name == "resnet50":
-        model = models.resnet50(weights=WEIGHTS_DICT["resnet50"])
-        if freeze:
-            for param in model.parameters():
-                param.requires_grad = False
-        model.fc = nn.Linear(model.fc.in_features, num_heads)
 
     else:
         raise ValueError(f"Unknown backbone: {name}")

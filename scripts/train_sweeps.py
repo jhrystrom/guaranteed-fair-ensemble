@@ -65,7 +65,7 @@ GLOBAL_ARGS: Final[dict[str, Any]] = {
     "max_epochs": 50,
     "rebalance": True,
     "ensemble-members": 21,
-    "backbone": "mobilenetv3",
+    "backbone": "mobilenetv3_large",
     "learning_rate": 0.001,
     "overwrite": False,
 }
