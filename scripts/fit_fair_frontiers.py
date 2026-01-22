@@ -605,7 +605,7 @@ if __name__ == "__main__":
         type=str,
         default="efficientnet_s",
         help="Backbone model name",
-        choices=["efficientnet_s", "mobilenetv3"],
+        choices=["efficientnet_s", "mobilenetv3", "mobilenetv3_large"],
     )
     args = parser.parse_args()
     main(

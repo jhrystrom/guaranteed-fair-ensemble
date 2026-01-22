@@ -1,0 +1,2 @@
+accuracy,equal_opportunity,min_recall,iteration,dataset,metric,threshold
+0.664,0.05614035087719301,0.6,1,fairvlmed,equal_opportunity,0.5

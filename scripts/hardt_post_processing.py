@@ -1,3 +1,4 @@
+import argparse
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -131,14 +132,15 @@ def analyse_dataset(
     metric: str = "equal_opportunity",
     min_iteration: int = 0,
     max_iterations: int = 3,
+    backbone: str = "efficientnet_s",
     overwrite: bool = False,
 ) -> pl.DataFrame:
     # Get dataset and so on
 
     dataset_info = get_dataset_info(dataset)
     logger.debug(f"Dataset info: {dataset_info}")
-    model_info = ModelInfo(method="erm_ensemble", backbone="efficientnet_s")
-    new_model_info = ModelInfo(method="hpp_ensemble", backbone="efficientnet_s")
+    model_info = ModelInfo(method="erm_ensemble", backbone=backbone)
+    new_model_info = ModelInfo(method="hpp_ensemble", backbone=backbone)
     training_info = TrainingInfo(dataset=dataset_info, model=model_info)
     spec = get_dataset(dataset)
     full_df = spec.load_and_clean_data(DATA_DIR)
@@ -279,7 +281,9 @@ def analyse_dataset(
     return pl.concat(result_complete)
 
 
-def analyse_all_datasets(overwrite: bool = False) -> None:
+def analyse_all_datasets(
+    overwrite: bool = False, backbone: str = "efficientnet_s"
+) -> None:
     for dataset_param in DATASET_HPARAMS:
         dataset_name = dataset_param.name
         fairness_metric = dataset_param.fairness_metric
@@ -290,6 +294,7 @@ def analyse_all_datasets(overwrite: bool = False) -> None:
             max_iterations=3,
             overwrite=overwrite,
             metric=fairness_metric,
+            backbone=backbone,
         )
         logger.debug(f"Dataset {dataset_name} result:\n{dataset_result}")
 
@@ -335,4 +340,13 @@ def initialize_model(
 
 
 if __name__ == "__main__":
-    analyse_all_datasets(overwrite=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--backbone",
+        type=str,
+        choices=["efficientnet_s", "mobilenetv3", "mobilenetv3_large"],
+        default="efficientnet_s",
+        help="Backbone model to use",
+    )
+    args = parser.parse_args()
+    analyse_all_datasets(overwrite=True, backbone=args.backbone)

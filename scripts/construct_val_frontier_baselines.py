@@ -373,7 +373,7 @@ def main(batch_size, backbone, overwrite, num_iterations):
 
 if __name__ == "__main__":
     BATCH_SIZE = 1024
-    BACKBONE = "mobilenetv3"
+    BACKBONE = "mobilenetv3_large"
     OVERWRITE = False
     NUM_ITERATIONS = 3
 
