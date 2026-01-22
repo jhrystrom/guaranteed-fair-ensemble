@@ -141,7 +141,7 @@ def plot_dataset(
     if "all" in methods:
         methods = ALL_METHODS
         # Remove hpp ensemble from methods for now
-        methods = [m for m in methods if m != "hpp_ensemble"]
+        # methods = [m for m in methods if m != "hpp_ensemble"]
     # Load the predictions
     dataset_params = get_dataset_info(dataset)
     logger.debug(f"{dataset_params=}")

@@ -57,8 +57,8 @@ def get_middle_predictions(
     middle_predictions = []
     for iteration in range(num_iteration):
         for model_info in all_infos:
-            if model_info.method == "hpp_ensemble":
-                continue
+            # if model_info.method == "hpp_ensemble":
+            #     continue
             baseline_path = guaranteed_fair_ensemble.names.create_baseline_save_path(
                 iteration=iteration,
                 model_info=model_info,
@@ -133,7 +133,7 @@ def main(
     if "all" in methods:
         methods = ALL_METHODS
         # Remove hpp ensemble from methods for now
-        methods = [m for m in methods if m != "hpp_ensemble"]
+        # methods = [m for m in methods if m != "hpp_ensemble"]
     if "all" in datasets:
         datasets = [data_info.name for data_info in DATASET_HPARAMS]
     # Load the predictions
