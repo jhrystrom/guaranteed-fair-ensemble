@@ -18,7 +18,7 @@ import guaranteed_fair_ensemble.datasets
 import guaranteed_fair_ensemble.names
 import guaranteed_fair_ensemble.preprocess
 from guaranteed_fair_ensemble.config import get_dataset_info
-from guaranteed_fair_ensemble.constants import DEFAULT_SEED
+from guaranteed_fair_ensemble.constants import BACKBONES, DEFAULT_SEED
 from guaranteed_fair_ensemble.data.base import DatasetSpec
 from guaranteed_fair_ensemble.data.registry import get_dataset
 from guaranteed_fair_ensemble.data_models import (
@@ -605,7 +605,7 @@ if __name__ == "__main__":
         type=str,
         default="efficientnet_s",
         help="Backbone model name",
-        choices=["efficientnet_s", "mobilenetv3", "mobilenetv3_large"],
+        choices=BACKBONES,
     )
     args = parser.parse_args()
     main(

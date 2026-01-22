@@ -21,6 +21,7 @@ import guaranteed_fair_ensemble.names
 from guaranteed_fair_ensemble.config import get_dataset_info
 from guaranteed_fair_ensemble.constants import (
     ALL_METHODS,
+    BACKBONES,
     DATASET_HPARAMS,
     FAIRRET_SCALES,
     PRETTY_METHOD_NAMES,
@@ -696,7 +697,7 @@ if __name__ == "__main__":
         "--backbone",
         type=str,
         default="efficientnet_s",
-        choices=["efficientnet", "mobilenetv3", "efficientnet_s", "mobilenetv3_large"],
+        choices=BACKBONES,
     )
     args = parser.parse_args()
 

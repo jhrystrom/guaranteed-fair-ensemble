@@ -38,6 +38,14 @@ PRETTY_METHOD_NAMES = {
     "hpp_ensemble": "Ensemble (HPP)",
 }
 
+
+BACKBONES = [
+    "efficientnet",
+    "mobilenetv3",
+    "efficientnet_s",
+    "mobilenetv3_large",
+]
+
 if __name__ == "__main__":
     from dataclasses import asdict
 
