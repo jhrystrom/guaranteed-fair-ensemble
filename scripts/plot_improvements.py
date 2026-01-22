@@ -696,7 +696,7 @@ if __name__ == "__main__":
         "--backbone",
         type=str,
         default="efficientnet_s",
-        choices=["efficientnet", "mobilenetv3", "efficientnet_s"],
+        choices=["efficientnet", "mobilenetv3", "efficientnet_s", "mobilenetv3_large"],
     )
     args = parser.parse_args()
 

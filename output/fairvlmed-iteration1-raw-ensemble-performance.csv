@@ -1,2 +1,2 @@
 min_recall,equal_opportunity,accuracy,dataset,iteration,method
-0.616,0.07354385964912284,0.684,fairvlmed,1,ensemble
+0.6571428571428571,0.04611528822055141,0.678,fairvlmed,1,ensemble

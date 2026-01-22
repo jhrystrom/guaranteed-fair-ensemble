@@ -311,7 +311,7 @@ def main(batch_size, backbone, overwrite, num_iterations):
     for dataset_params in tqdm(DATASET_HPARAMS, desc="Datasets"):
         img_dict = None
         for baseline_info in tqdm(baseline_model_infos, desc="Baselines", leave=False):
-            if baseline_info.method != "hpp_ensemble":
+            if baseline_info.method == "hpp_ensemble":
                 logger.info(
                     f"Constructing validation frontier for {dataset_params.name} - {baseline_info.method}"
                 )
